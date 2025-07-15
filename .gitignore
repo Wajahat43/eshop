@@ -45,3 +45,6 @@ test-output
 
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
+
+.env
+/generated/prisma
