@@ -4,7 +4,7 @@ import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 const swaggerDocument = require('./swagger-output.json');
 
-import { errorMiddleware } from '../../../packages/error-handler/error-middleware';
+import { errorMiddleware } from '@packages/error-handler/error-middleware';
 
 import router from './routes/auth.router';
 
