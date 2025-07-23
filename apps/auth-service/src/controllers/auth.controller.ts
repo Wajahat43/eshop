@@ -12,7 +12,7 @@ import {
   verifyOTP,
 } from '../utils/auth.helper';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 import { setCookie } from '../utils/cookies/setCookie';
 
 //Register a new user.
@@ -125,6 +125,63 @@ export const UserLogin = async (request: Request, response: Response, next: Next
   }
 };
 
+//Refresh Token User
+export const UserRefreshToken = async (request: Request, response: Response, next: NextFunction) => {
+  try {
+    const { refreshToken } = request.cookies.refresh_token;
+    if (!refreshToken) {
+      throw new ValidationError('Unauthorized! No refresh token');
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as {
+      id: string;
+      role: string;
+    };
+
+    if (!decoded || !decoded.id || !decoded.role) {
+      return new JsonWebTokenError('Forbidden! Invalid refresh token');
+    }
+
+    let account;
+    if (decoded.role === 'user') {
+      account = await prisma.users.findUnique({ where: { id: decoded.id } });
+    } else if (decoded.role === 'seller') {
+      //TODO: Fix this when creating seller database collection
+      account = await prisma.users.findUnique({ where: { id: decoded.id } });
+    }
+
+    if (!account) {
+      return new AuthError('User not found!');
+    }
+
+    const accessToken = jwt.sign(
+      {
+        id: account.id,
+        role: 'user',
+      },
+      process.env.ACCESS_TOKEN_SECRET as string,
+      {
+        expiresIn: '15m',
+      },
+    );
+
+    // store the tokens in httpOnly secure cookie
+    setCookie(response, 'access_token', accessToken);
+    response.status(201).json({ success: true });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Get logged in User
+export const getUser = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const user = request.user;
+    response.status(200).json({ user });
+  } catch (error) {
+    return next(error);
+  }
+};
 //Forgot password
 export const UserForgotPassword = async (request: Request, response: Response, next: NextFunction) => {
   await handleForgotPassword(request, response, next, 'user');
