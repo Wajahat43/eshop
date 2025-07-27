@@ -3,7 +3,8 @@ import { NextFunction, Response } from 'express';
 import jwt from 'jsonwebtoken';
 const isAuthenticated = async (req: any, response: Response, next: NextFunction) => {
   try {
-    const token = req.cookies.access_token || req.headers.authorization?.split(' ')[1];
+    const token =
+      req.cookies['access_token'] || req.cookies['seller_access_token'] || req.headers.authorization?.split(' ')[1];
 
     if (!token) {
       return response.status(401).json({ message: 'Unauthorized! No access token' });
@@ -19,11 +20,15 @@ const isAuthenticated = async (req: any, response: Response, next: NextFunction)
       return response.status(403).json({ message: 'Forbidden! Invalid access token' });
     }
 
-    const account = await prisma.users.findUnique({ where: { id: decoded.id } });
+    const account =
+      decoded.role === 'user'
+        ? await prisma.users.findUnique({ where: { id: decoded.id } })
+        : await prisma.sellers.findUnique({ where: { id: decoded.id }, include: { shop: true } });
     if (!account) {
       return response.status(403).json({ message: 'Account not found!' });
     }
     req.user = account;
+    req.role = decoded.role;
     return next();
   } catch (error) {
     return response.status(401).json({ message: 'Unauthorized! Token expired or invalid.' });

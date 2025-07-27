@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { Search } from 'lucide-react';
 
 const Header = () => {
+  
+
+
   return (
     <div className="bg-background text-foreground">
       <div className="w-[80%] py-5 m-auto flex items-center justify-between">

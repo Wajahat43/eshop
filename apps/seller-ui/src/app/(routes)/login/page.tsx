@@ -3,12 +3,12 @@ import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
-import GoogleButton from 'apps/user-ui/src/shared/components/GoogleButton';
-import { EMAIL_REGEX } from 'apps/user-ui/src/configs/constants';
+
 import { Eye, EyeOff } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import axios, { AxiosError } from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
+import { EMAIL_REGEX } from 'apps/seller-ui/src/configs/constants';
 
 type FormData = {
   email: string;
@@ -29,7 +29,7 @@ const page = () => {
 
   const loginMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URI}/api/login-user`, data, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URI}/api/login-seller`, data, {
         withCredentials: true,
       });
       return response.data;
@@ -50,7 +50,7 @@ const page = () => {
     loginMutation.mutate(data);
   };
   return (
-    <div className="w-full py-10 min-h-[85svh] bg-card">
+    <div className="w-full py-10 min-h-screen bg-card">
       <h1 className="text-4xl font-Poppins font-semibold text-center">Login</h1>
       <p className="text-center text-lg font-medium py-3">Home . Login</p>
       <div className="w-full flex justify-center">
@@ -62,8 +62,6 @@ const page = () => {
               Sign up
             </Link>
           </p>
-
-          <GoogleButton onClick={() => {}} className="align-center" />
 
           <div className="flex items-center my-5 text-sm">
             <div className="flex flex-1 border-t border-border" />

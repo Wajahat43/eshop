@@ -5,10 +5,12 @@ import { AlignLeft, ChevronDown } from 'lucide-react';
 import { navItems } from 'apps/user-ui/src/configs/constants';
 import Link from 'next/link';
 import ActionItems from './action-items';
+import useUser from 'apps/user-ui/src/hooks/userUser';
 
 const HeaderBottom = () => {
   const [show, setShow] = React.useState(false);
   const [isSticky, setIsSticky] = React.useState(false);
+  // const { user } = useUser();
 
   //Track scroll position
   React.useEffect(() => {
