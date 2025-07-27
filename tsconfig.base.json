@@ -17,10 +17,8 @@
     "strict": true,
     "target": "es2022",
     "baseUrl": ".",
-    "paths" : {
-      "@packages/*": [
-        "packages/*"
-      ]
+    "paths": {
+      "@packages/*": ["packages/*"]
     }
   }
 }
