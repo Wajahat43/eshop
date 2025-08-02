@@ -5,6 +5,7 @@ import proxy from 'express-http-proxy';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import initializeSiteConfig from './libs/initializeSiteConfig';
 
 const app = express();
 
@@ -16,8 +17,8 @@ app.use(
   }),
 );
 app.use(morgan('dev'));
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ limit: '100mb', extended: true }));
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
 app.use(cookieParser());
 app.set('trust proxy', 1);
 
@@ -39,10 +40,18 @@ app.get('/gateway-health', (req, res) => {
   res.send({ message: 'Welcome to api-gateway!' });
 });
 
+app.use('/product', proxy('http://localhost:6002'));
 app.use('/', proxy('http://localhost:6001'));
 
 const port = process.env.PORT || 8080;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/api`);
+
+  try {
+    initializeSiteConfig();
+    console.log('Site config initialized');
+  } catch (error) {
+    console.error('Error initializing site config:', error);
+  }
 });
 server.on('error', console.error);

@@ -116,6 +116,9 @@ export const UserLogin = async (request: Request, response: Response, next: Next
     setCookie(response, 'access_token', accessToken);
     setCookie(response, 'refresh_token', refreshToken);
 
+    response.clearCookie('seller_access_token');
+    response.clearCookie('seller_refresh_token');
+
     response.status(200).json({
       success: true,
       message: 'User logged in successfully!',
@@ -131,9 +134,13 @@ export const UserLogin = async (request: Request, response: Response, next: Next
 };
 
 //Refresh Token User
-export const UserRefreshToken = async (request: Request, response: Response, next: NextFunction) => {
+export const RefreshToken = async (request: any, response: Response, next: NextFunction) => {
   try {
-    const { refreshToken } = request.cookies.refresh_token;
+    const refreshToken =
+      request.cookies['refresh_token'] ||
+      request.cookies['seller_refresh_token'] ||
+      request.headers.authorization?.split(' ')[1];
+
     if (!refreshToken) {
       throw new ValidationError('Unauthorized! No refresh token');
     }
@@ -151,8 +158,7 @@ export const UserRefreshToken = async (request: Request, response: Response, nex
     if (decoded.role === 'user') {
       account = await prisma.users.findUnique({ where: { id: decoded.id } });
     } else if (decoded.role === 'seller') {
-      //TODO: Fix this when creating seller database collection
-      account = await prisma.users.findUnique({ where: { id: decoded.id } });
+      account = await prisma.sellers.findUnique({ where: { id: decoded.id }, include: { shop: true } });
     }
 
     if (!account) {
@@ -161,17 +167,24 @@ export const UserRefreshToken = async (request: Request, response: Response, nex
 
     const accessToken = jwt.sign(
       {
-        id: account.id,
-        role: 'user',
+        id: decoded.id,
+        role: decoded.role,
       },
       process.env.ACCESS_TOKEN_SECRET as string,
       {
-        expiresIn: '15m',
+        expiresIn: '60m',
       },
     );
 
+    if (decoded.role === 'user') {
+      setCookie(response, 'access_token', accessToken);
+    } else if (decoded.role === 'seller') {
+      setCookie(response, 'seller_access_token', accessToken);
+    }
+
+    request.role = decoded.role;
     // store the tokens in httpOnly secure cookie
-    setCookie(response, 'access_token', accessToken);
+    setCookie(response, 'refresh_token', refreshToken);
     response.status(201).json({ success: true });
   } catch (error) {
     return next(error);
@@ -329,6 +342,9 @@ export const sellerLogin = async (request: Request, response: Response, next: Ne
     //Therefore, we are setting it differently.
     setCookie(response, 'seller_access_token', accessToken);
     setCookie(response, 'seller_refresh_token', refreshToken);
+
+    response.clearCookie('access_token');
+    response.clearCookie('refresh_token');
 
     response.status(200).json({
       success: true,

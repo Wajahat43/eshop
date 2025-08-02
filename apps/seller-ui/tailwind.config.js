@@ -1,19 +1,10 @@
-// const { createGlobPatternsForDependencies } = require('@nx/next/tailwind');
-
-// The above utility import will not work if you are using Next.js' --turbo.
-// Instead you will have to manually add the dependent paths to be included.
-// For example
-// ../libs/buttons/**/*.{ts,tsx,js,jsx,html}',                 <--- Adding a shared lib
-// !../libs/buttons/**/*.{stories,spec}.{ts,tsx,js,jsx,html}', <--- Skip adding spec/stories files from shared lib
-
-// If you are **not** using `--turbo` you can uncomment both lines 1 & 19.
-// A discussion of the issue can be found: https://github.com/nrwl/nx/issues/26510
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     './{src,pages,components,app}/**/*.{ts,tsx,js,jsx,html}',
+    '../seller-ui/src/**/*.{ts,tsx,js,jsx,html}',
     '!./{src,pages,components,app}/**/*.{stories,spec}.{ts,tsx,js,jsx,html}',
+    '../../packages/components/**/*.{ts,tsx,js,jsx,html}',
     //     ...createGlobPatternsForDependencies(__dirname)
   ],
   theme: {
@@ -56,9 +47,10 @@ module.exports = {
         'sidebar-accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
         'sidebar-border': 'hsl(var(--sidebar-border))',
         'sidebar-ring': 'hsl(var(--sidebar-ring))',
+        'sidebar-muted': 'hsl(var(--sidebar) / 0.5)',
+        'sidebar-muted-foreground': 'hsl(var(--sidebar-foreground) / 0.7)',
       },
       fontFamily: {
-        Roboto: ['var(--font-roboto)'],
         Poppins: ['var(--font-poppins)'],
         sans: [
           'var(--font-sans)',
@@ -110,15 +102,27 @@ module.exports = {
       spacing: {
         spacing: 'var(--spacing)',
       },
-
+      scale: {
+        102: '1.02',
+      },
       animation: {
         'spinner-blade': 'spinner-blade 1s linear infinite',
+        'sidebar-slide-in': 'sidebar-slide-in 0.3s ease-out',
+        'sidebar-slide-out': 'sidebar-slide-out 0.3s ease-in',
       },
       keyframes: {
         'spinner-blade': {
           '0%': { opacity: '0.85' },
           '50%': { opacity: '0.25' },
           '100%': { opacity: '0.25' },
+        },
+        'sidebar-slide-in': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'sidebar-slide-out': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-100%)' },
         },
       },
     },

@@ -24,3 +24,5 @@ export function Spinner({ className, size = 'md', ...props }: SpinnerProps) {
     </div>
   );
 }
+
+export default Spinner;

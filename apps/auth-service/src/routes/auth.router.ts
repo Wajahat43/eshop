@@ -9,7 +9,7 @@ import {
   SellerRegistration,
   UserForgotPassword,
   UserLogin,
-  UserRefreshToken,
+  RefreshToken,
   UserRegistration,
   UserResetPassword,
   UserVerification,
@@ -24,7 +24,7 @@ const router: Router = express.Router();
 router.post('/user-registration', UserRegistration);
 router.post('/verify-user', UserVerification);
 router.post('/login-user', UserLogin);
-router.post('/refresh-token-user', UserRefreshToken);
+router.post('/refresh-token', RefreshToken);
 router.get('/logged-in-user', isAuthenticated, getUser);
 router.post('/forgot-password-user', UserForgotPassword);
 router.post('/verify-forgot-password-otp', UserVerifyForgotPasswordOTP);

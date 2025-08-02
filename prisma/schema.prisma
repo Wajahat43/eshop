@@ -13,8 +13,10 @@ model images {
   url         String
   userId      String? @unique @db.ObjectId 
   shopId      String? @unique @db.ObjectId
+  productId   String? @db.ObjectId
   users       users? @relation(fields: [userId], references: [id])
   shops       shops? @relation(fields: [shopId], references: [id])
+  products    products? @relation(fields: [productId], references: [id])
 }
 
 model users {
@@ -57,6 +59,7 @@ model shops {
   sellers     sellers @relation(fields: [sellerId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  products products[]
 }
 
 model sellers {
@@ -71,4 +74,62 @@ model sellers {
   shopId      String? @unique @db.ObjectId
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model site_config {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  categories String[]
+  subCategories Json
+}
+
+model discount_codes {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  public_name String
+  discountType String
+  discountValue Float
+  discountCode String @unique
+  sellerId String @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+}
+
+enum ProductStatus {
+  ACTIVE
+  PENDING
+  DRAFT
+}
+
+model products {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  title String
+  slug String @unique
+  category String
+  subCategory String
+  short_description String
+  detailed_description String
+  images images[]
+  video_url String?
+  tags String[]
+  brand String?
+  colors String[]
+  sizes String[]
+  starting_date DateTime?
+  ending_date DateTime?
+  stock Int
+  sale_price Float
+  regular_price Float
+  rating Float @default(0)
+  warranty String?
+  custom_specifications Json?
+  custom_properties Json?
+  isDeleted Boolean? @default(false)
+  cashOnDelivery String?
+  discount_codes String[] @db.ObjectId
+  status ProductStatus @default(ACTIVE)
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shopId String @db.ObjectId
+  shop shops @relation(fields: [shopId], references: [id])
 }
