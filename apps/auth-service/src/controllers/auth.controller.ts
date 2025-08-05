@@ -195,6 +195,16 @@ export const RefreshToken = async (request: any, response: Response, next: NextF
 export const getUser = async (request: any, response: Response, next: NextFunction) => {
   try {
     const user = request.user;
+    if (!user) {
+      const seller = request.seller;
+      if (!seller) {
+        return next(new AuthError('User or seller not found!'));
+      }
+
+      response.clearCookie('seller_access_token');
+      response.clearCookie('seller_refresh_token');
+      return next(new AuthError('User not Signed In!'));
+    }
     response.status(200).json({ user });
   } catch (error) {
     return next(error);

@@ -14,6 +14,7 @@ module.exports = {
   content: [
     './{src,pages,components,app}/**/*.{ts,tsx,js,jsx,html}',
     '!./{src,pages,components,app}/**/*.{stories,spec}.{ts,tsx,js,jsx,html}',
+    '../../packages/components/**/*.{ts,tsx,js,jsx,html}',
     //     ...createGlobPatternsForDependencies(__dirname)
   ],
   theme: {
@@ -110,9 +111,13 @@ module.exports = {
       spacing: {
         spacing: 'var(--spacing)',
       },
+      scale: {
+        102: '1.02',
+      },
 
       animation: {
         'spinner-blade': 'spinner-blade 1s linear infinite',
+        'gradient-xy': 'gradient-xy 5s ease infinite',
       },
       keyframes: {
         'spinner-blade': {
@@ -120,9 +125,19 @@ module.exports = {
           '50%': { opacity: '0.25' },
           '100%': { opacity: '0.25' },
         },
+        'gradient-xy': {
+          '0%, 100%': {
+            'background-size': '400% 400%',
+            'background-position': 'left center',
+          },
+          '50%': {
+            'background-size': '200% 200%',
+            'background-position': 'right center',
+          },
+        },
       },
     },
   },
   plugins: [],
-  darkMode: 'class',
+  darkMode: ['class', '[data-theme="dark"]'],
 };

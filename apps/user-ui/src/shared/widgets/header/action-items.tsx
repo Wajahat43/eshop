@@ -1,16 +1,21 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { Heart, Search, User, ShoppingCart } from 'lucide-react';
+import { Heart, User, ShoppingCart } from 'lucide-react';
 import useUser from 'apps/user-ui/src/hooks/userUser';
 import { Spinner } from '../../components/spinner';
+import { useStore } from 'apps/user-ui/src/store';
 
 const ActionItems = () => {
   const { user, isLoading } = useUser();
 
+  const wishlist = useStore((state) => state.wishlist);
+  const cart = useStore((state) => state.cart);
+
   return (
     <div className="flex items-center gap-8">
       <div className="flex items-center gap-4">
+        {/* User Profile Section */}
         <div className="w-[120px] h-[50px] flex items-center justify-center">
           {isLoading ? (
             <Spinner size="lg" />
@@ -44,17 +49,19 @@ const ActionItems = () => {
             </>
           )}
         </div>
+
+        {/* Action Icons */}
         <div className="flex items-center gap-5">
           <Link href="/wishlist" className="relative">
             <Heart />
             <div className="w-6 h-6 border-2 border-white bg-red-500 rounded-full flex items-center justify-center absolute top-[-10px] right-[-10px]">
-              <span className="text-white font-medium text-sm">0</span>
+              <span className="text-white font-medium text-sm">{wishlist.length}</span>
             </div>
           </Link>
           <Link href="/cart" className="relative">
             <ShoppingCart />
             <div className="w-6 h-6 border-2 border-white bg-red-500 rounded-full flex items-center justify-center absolute top-[-10px] right-[-10px]">
-              <span className="text-white font-medium text-sm">0</span>
+              <span className="text-white font-medium text-sm">{cart.length}</span>
             </div>
           </Link>
         </div>

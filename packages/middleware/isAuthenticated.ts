@@ -32,6 +32,7 @@ const isAuthenticated = async (req: any, response: Response, next: NextFunction)
       req.seller = account;
     } else {
       req.user = account;
+      console.log('Set req.user to ', account);
     }
 
     req.role = decoded.role;

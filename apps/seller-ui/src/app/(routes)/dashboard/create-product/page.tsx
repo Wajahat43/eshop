@@ -104,6 +104,7 @@ const CreateProduct = () => {
     }
   };
 
+  //TODO: Save the draft product in the database
   const handleSaveDraft = () => {
     console.log('save draft');
   };

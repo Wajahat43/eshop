@@ -1,28 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useTheme } from '../../hooks/useTheme';
 
 export function DarkModeToggle() {
-  const [darkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  const { theme, toggleTheme, isDark } = useTheme();
 
   return (
     <button
-      onClick={toggleDarkMode}
+      onClick={toggleTheme}
       className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-lg z-50"
     >
-      Toggle Dark Mode
+      {isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}
     </button>
   );
 }

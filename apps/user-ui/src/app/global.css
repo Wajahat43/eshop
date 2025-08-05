@@ -91,7 +91,7 @@ pre {
   --spacing: 0.25rem;
 }
 
-.dark {
+[data-theme='dark'] {
   --background: 0 0% 9.0196%;
   --foreground: 0 0% 89.8039%;
   --card: 0 0% 14.902%;

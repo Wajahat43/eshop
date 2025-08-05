@@ -20,6 +20,8 @@ export const Dialog: React.FC<DialogProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  console.log('Dialog rendered');
+
   const getSizeClasses = () => {
     switch (size) {
       case 'sm':
@@ -56,7 +58,7 @@ export const Dialog: React.FC<DialogProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={handleBackdropClick}>
       <div
-        className={`bg-card border border-border rounded-lg p-6 w-full ${getSizeClasses()} max-h-[90vh] overflow-y-auto shadow-lg`}
+        className={`bg-card border border-border rounded-lg p-6 w-full ${getSizeClasses()} max-h-[80vh] overflow-y-auto shadow-lg`}
       >
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-card-foreground">{title}</h3>

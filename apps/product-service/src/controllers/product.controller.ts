@@ -1,6 +1,7 @@
 import { AuthError, ValidationError } from '@packages/error-handler';
 import imageKit from '@packages/libs/imageKit';
 import prisma from '@packages/libs/prisma';
+import { Prisma } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 
 //Get product categories
@@ -304,5 +305,60 @@ export const restoreProduct = async (req: any, res: Response, next: NextFunction
   } catch (error) {
     console.error('Error restoring product:', error);
     return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+//Get all products
+export const getAllProducts = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+    const type = req.query.type as string;
+
+    // const baseFilter = {
+    //   OR: [
+    //     {
+    //       starting_date: null,
+    //     },
+    //     {
+    //       ending_date: null,
+    //     },
+    //   ],
+    // };
+    const baseFilter = {};
+    const orderBy: Prisma.productsOrderByWithRelationInput =
+      type === 'latest' ? { createdAt: 'desc' as Prisma.SortOrder } : { createdAt: 'desc' as Prisma.SortOrder };
+
+    const [products, total, top10Products] = await Promise.all([
+      prisma.products.findMany({
+        where: baseFilter,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          images: true,
+          shop: true,
+        },
+      }),
+      prisma.products.count({ where: baseFilter }),
+      prisma.products.findMany({
+        take: 10,
+        where: baseFilter,
+        orderBy,
+      }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      top10By: type === 'latest' ? 'latest' : 'topSales',
+      products,
+      total,
+      top10Products,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    next(error);
   }
 };

@@ -3,6 +3,7 @@ import './global.css';
 import { DarkModeToggle } from '../components/ui/DarkModeToggle';
 import { Poppins, Roboto } from 'next/font/google';
 import Providers from './Providers';
+import { ThemeScript } from './theme-script';
 
 export const metadata = {
   title: 'NextCart',
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`min-h-screen bg-background text-foreground font-sans antialiased ${roboto.variable} ${poppins.variable}`}
       >
+        <ThemeScript />
         <Providers>
           <Header />
           {children}
