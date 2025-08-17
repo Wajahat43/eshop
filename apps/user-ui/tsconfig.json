@@ -28,6 +28,7 @@
   "include": [
     "../../apps/user-ui/.next/types/**/*.ts",
     "../../packages/**/*.tsx",
+    "../../packages/**/*.ts",
     "../../dist/apps/user-ui/.next/types/**/*.ts",
     "next-env.d.ts",
     "src/**/*.js",

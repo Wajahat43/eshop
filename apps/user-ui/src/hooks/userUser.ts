@@ -19,7 +19,7 @@ const useUser = () => {
   });
 
   return {
-    user: userQuery.data,
+    user: userQuery.data ,
     isPending: userQuery.isPending,
     isError: userQuery.isError,
     refetch: userQuery.refetch,

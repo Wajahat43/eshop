@@ -27,6 +27,7 @@ model users {
   following   String[]
   avatar      images?
   reviews     shopReview[] 
+  analytics   userAnalytics?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -60,6 +61,7 @@ model shops {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   products products[]
+  productAnalytics productAnalytics[]
 }
 
 model sellers {
@@ -133,4 +135,35 @@ model products {
   shopId String @db.ObjectId
   shop shops @relation(fields: [shopId], references: [id])
   totalSales Int @default(0)
+  analytics productAnalytics?
+}
+
+model userAnalytics {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String @unique @db.ObjectId
+  actions     Json[] // Array of user actions with productId, shopId, action, timestamp
+  country     String?
+  city        String?
+  device      String?
+  lastVisited DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        users @relation(fields: [userId], references: [id])
+}
+
+model productAnalytics {
+  id            String @id @default(auto()) @map("_id") @db.ObjectId
+  productId     String @unique @db.ObjectId
+  shopId        String @db.ObjectId
+  views         Int @default(0)
+  cartAdds      Int @default(0)
+  cartRemoves   Int @default(0)
+  wishlistAdds  Int @default(0)
+  wishlistRemoves Int @default(0)
+  purchases     Int @default(0)
+  lastViewedAt  DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  product       products @relation(fields: [productId], references: [id])
+  shop          shops @relation(fields: [shopId], references: [id])
 }

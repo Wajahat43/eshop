@@ -24,7 +24,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   const [quantity, setQuantity] = useState<number>(1);
 
   const router = useRouter();
-  const user = useUser();
+  const { user } = useUser();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
 

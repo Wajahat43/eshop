@@ -13,7 +13,8 @@ import useProducts from 'apps/user-ui/src/hooks/useProducts';
 
 const WishlistPage = () => {
   const { wishlist, cart, addToCart, removeFromWishlist } = useStore();
-  const user = useUser();
+  const { user } = useUser();
+
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
   const { getProductsQuery } = useProducts({});

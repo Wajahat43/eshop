@@ -13,7 +13,7 @@ import useProducts from 'apps/user-ui/src/hooks/useProducts';
 
 const CartPage = () => {
   const { cart, removeFromCart, setCartQuantity } = useStore();
-  const user = useUser();
+  const { user } = useUser();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
 
@@ -63,7 +63,10 @@ const CartPage = () => {
                 className="h-24 w-24 rounded-lg object-cover"
               />
               <div>
-                <Link href={`/product/${product.slug}`} className="hover:underline hover:text-primary font-semibold text-lg">
+                <Link
+                  href={`/product/${product.slug}`}
+                  className="hover:underline hover:text-primary font-semibold text-lg"
+                >
                   {product.title}
                 </Link>
                 <p className="text-sm text-muted-foreground">{product.category}</p>
@@ -190,7 +193,9 @@ const CartPage = () => {
           </div>
           <hr />
           <div className="space-y-2">
-            <label htmlFor="coupon" className="font-medium">Have a coupon?</label>
+            <label htmlFor="coupon" className="font-medium">
+              Have a coupon?
+            </label>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -207,7 +212,9 @@ const CartPage = () => {
           </div>
           <hr />
           <div className="space-y-2">
-            <label htmlFor="shipping" className="font-medium">Select shipping address</label>
+            <label htmlFor="shipping" className="font-medium">
+              Select shipping address
+            </label>
             <select
               id="shipping"
               value={shippingAddress}
@@ -219,7 +226,9 @@ const CartPage = () => {
           </div>
           <hr />
           <div className="space-y-2">
-            <label htmlFor="payment" className="font-medium">Select payment method</label>
+            <label htmlFor="payment" className="font-medium">
+              Select payment method
+            </label>
             <select
               id="payment"
               value={paymentMethod}
