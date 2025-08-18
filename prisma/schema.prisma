@@ -28,6 +28,7 @@ model users {
   avatar      images?
   reviews     shopReview[] 
   analytics   userAnalytics?
+  addresses   userAddresses[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -149,6 +150,21 @@ model userAnalytics {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        users @relation(fields: [userId], references: [id])
+}
+
+model userAddresses {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String @db.ObjectId
+  user      users @relation(fields: [userId], references: [id])
+  label     String // e.g., "Home", "Work", "Office"
+  name      String // Full name for delivery
+  street    String
+  city      String
+  zip       String
+  country   String
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model productAnalytics {

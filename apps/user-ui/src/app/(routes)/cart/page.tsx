@@ -10,6 +10,7 @@ import useUser from 'apps/user-ui/src/hooks/userUser';
 import useLocationTracking from 'apps/user-ui/src/hooks/useLocationTracking';
 import useDeviceTracking from 'apps/user-ui/src/hooks/useDeviceTracking';
 import useProducts from 'apps/user-ui/src/hooks/useProducts';
+import { useUserAddresses } from 'apps/user-ui/src/hooks/useUserAddresses';
 
 const CartPage = () => {
   const { cart, removeFromCart, setCartQuantity } = useStore();
@@ -18,10 +19,23 @@ const CartPage = () => {
   const deviceInfo = useDeviceTracking();
 
   const { getProductsQuery } = useProducts({});
+  const { data: addresses = [], isLoading: addressesLoading } = useUserAddresses();
 
   const [coupon, setCoupon] = useState('');
-  const [shippingAddress, setShippingAddress] = useState('123 Main St, Anytown, USA');
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('online');
+
+  // Auto-select default address when addresses load
+  React.useEffect(() => {
+    if (addresses.length > 0 && !selectedAddressId) {
+      const defaultAddress = addresses.find((addr) => addr.isDefault);
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id);
+      } else {
+        setSelectedAddressId(addresses[0].id);
+      }
+    }
+  }, [addresses, selectedAddressId]);
 
   const enrichedCart = useMemo(() => {
     if (!getProductsQuery.data?.products) {
@@ -144,7 +158,7 @@ const CartPage = () => {
     return (
       <div className="w-full min-h-[50vh] flex flex-col items-center justify-center text-center p-8">
         <h2 className="text-2xl font-semibold mb-2">Your Cart is Empty</h2>
-        <p className="text-muted-foreground mb-6">Looks like you haven't added anything to your cart yet.</p>
+        <p className="text-muted-foreground mb-6">Looks like you haven&apos;t added anything to your cart yet.</p>
         <Link href="/" className="px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
           Continue Shopping
         </Link>
@@ -215,14 +229,31 @@ const CartPage = () => {
             <label htmlFor="shipping" className="font-medium">
               Select shipping address
             </label>
-            <select
-              id="shipping"
-              value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
-              className="w-full p-2 border rounded-md bg-background text-foreground border-border"
-            >
-              <option value="123 Main St, Anytown, USA">123 Main St, Anytown, USA</option>
-            </select>
+            {addressesLoading ? (
+              <div className="p-2 text-sm text-muted-foreground">Loading addresses...</div>
+            ) : addresses.length === 0 ? (
+              <div className="p-2 text-sm text-muted-foreground">
+                No addresses found.{' '}
+                <Link href="/profile?tab=shipping" className="text-primary hover:underline">
+                  Add an address in your profile
+                </Link>
+              </div>
+            ) : (
+              <select
+                id="shipping"
+                value={selectedAddressId}
+                onChange={(e) => setSelectedAddressId(e.target.value)}
+                className="w-full p-2 border rounded-md bg-background text-foreground border-border"
+              >
+                <option value="">Select a shipping address</option>
+                {addresses.map((address) => (
+                  <option key={address.id} value={address.id}>
+                    {address.label}: {address.name} - {address.street}, {address.city}, {address.zip}, {address.country}
+                    {address.isDefault && ' (Default)'}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <hr />
           <div className="space-y-2">
@@ -245,8 +276,23 @@ const CartPage = () => {
             <span>${total.toFixed(2)}</span>
           </div>
           <hr />
-          <button className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold text-lg hover:bg-primary/90 transition-colors">
-            Proceed to Checkout
+          <button
+            className={`w-full py-3 rounded-lg font-semibold text-lg transition-colors ${
+              selectedAddressId
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
+            }`}
+            disabled={!selectedAddressId}
+            onClick={() => {
+              if (!selectedAddressId) {
+                alert('Please select a shipping address');
+              } else {
+                // Proceed to checkout logic here
+                console.log('Proceeding to checkout with address:', selectedAddressId);
+              }
+            }}
+          >
+            {selectedAddressId ? 'Proceed to Checkout' : 'Select Shipping Address'}
           </button>
         </div>
       </div>

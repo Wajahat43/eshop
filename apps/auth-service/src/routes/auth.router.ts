@@ -1,12 +1,18 @@
 import express, { Router } from 'express';
 
 import {
+  addUserAddress,
   createNewShop,
   createStripeConnectLink,
+  deleteUserAddress,
   getSeller,
   getUser,
+  getUserAddresses,
+  logoutUser,
   sellerLogin,
   SellerRegistration,
+  setDefaultAddress,
+  updateUserAddress,
   UserForgotPassword,
   UserLogin,
   RefreshToken,
@@ -35,5 +41,13 @@ router.post('/create-shop', createNewShop);
 router.post('/login-seller', sellerLogin);
 router.get('/logged-in-seller', isAuthenticated, isSeller, getSeller);
 router.post('/create-stripe-link', createStripeConnectLink);
+router.post('/logout', logoutUser);
+
+// User Address Management
+router.get('/user-addresses', isAuthenticated, getUserAddresses);
+router.post('/user-addresses', isAuthenticated, addUserAddress);
+router.put('/user-addresses/:id', isAuthenticated, updateUserAddress);
+router.delete('/user-addresses/:id', isAuthenticated, deleteUserAddress);
+router.patch('/user-addresses/:id/set-default', isAuthenticated, setDefaultAddress);
 
 export default router;

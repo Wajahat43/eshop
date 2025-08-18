@@ -413,6 +413,202 @@ export const createNewShop = async (request: Request, response: Response, next: 
   }
 };
 
+//Logout user
+export const logoutUser = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    // Clear all authentication cookies
+    response.clearCookie('access_token');
+    response.clearCookie('refresh_token');
+    response.clearCookie('seller_access_token');
+    response.clearCookie('seller_refresh_token');
+
+    response.status(200).json({
+      success: true,
+      message: 'Logged out successfully!',
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Get user addresses
+export const getUserAddresses = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const userId = request.user.id;
+
+    const addresses = await prisma.userAddresses.findMany({
+      where: { userId },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    response.status(200).json({
+      success: true,
+      addresses,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Add new user address
+export const addUserAddress = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const userId = request.user.id;
+    const { label, name, street, city, zip, country, isDefault } = request.body;
+
+    // Validate required fields
+    if (!label || !name || !street || !city || !zip || !country) {
+      return next(new ValidationError('Missing required fields!'));
+    }
+
+    // If this is the default address, unset other default addresses
+    if (isDefault) {
+      await prisma.userAddresses.updateMany({
+        where: { userId, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+
+    const address = await prisma.userAddresses.create({
+      data: {
+        userId,
+        label,
+        name,
+        street,
+        city,
+        zip,
+        country,
+        isDefault: isDefault || false,
+      },
+    });
+
+    response.status(201).json({
+      success: true,
+      message: 'Address added successfully!',
+      address,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Update user address
+export const updateUserAddress = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const userId = request.user.id;
+    const { id } = request.params;
+    const { label, name, street, city, zip, country, isDefault } = request.body;
+
+    // Validate required fields
+    if (!label || !name || !street || !city || !zip || !country) {
+      return next(new ValidationError('Missing required fields!'));
+    }
+
+    // Check if address belongs to user
+    const existingAddress = await prisma.userAddresses.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existingAddress) {
+      return next(new ValidationError('Address not found!'));
+    }
+
+    // If this is the default address, unset other default addresses
+    if (isDefault) {
+      await prisma.userAddresses.updateMany({
+        where: { userId, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+
+    const address = await prisma.userAddresses.update({
+      where: { id },
+      data: {
+        label,
+        name,
+        street,
+        city,
+        zip,
+        country,
+        isDefault: isDefault || false,
+      },
+    });
+
+    response.status(200).json({
+      success: true,
+      message: 'Address updated successfully!',
+      address,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Delete user address
+export const deleteUserAddress = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const userId = request.user.id;
+    const { id } = request.params;
+
+    // Check if address belongs to user
+    const existingAddress = await prisma.userAddresses.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existingAddress) {
+      return next(new ValidationError('Address not found!'));
+    }
+
+    await prisma.userAddresses.delete({
+      where: { id },
+    });
+
+    response.status(200).json({
+      success: true,
+      message: 'Address deleted successfully!',
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Set default address
+export const setDefaultAddress = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const userId = request.user.id;
+    const { id } = request.params;
+
+    // Check if address belongs to user
+    const existingAddress = await prisma.userAddresses.findFirst({
+      where: { id, userId },
+    });
+
+    if (!existingAddress) {
+      return next(new ValidationError('Address not found!'));
+    }
+
+    // Unset all other default addresses
+    await prisma.userAddresses.updateMany({
+      where: { userId, isDefault: true },
+      data: { isDefault: false },
+    });
+
+    // Set this address as default
+    const address = await prisma.userAddresses.update({
+      where: { id },
+      data: { isDefault: true },
+    });
+
+    response.status(200).json({
+      success: true,
+      message: 'Default address set successfully!',
+      address,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 //Create stripe connect account link
 export const createStripeConnectLink = async (request: Request, response: Response, next: NextFunction) => {
   try {
