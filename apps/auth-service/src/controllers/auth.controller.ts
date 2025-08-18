@@ -97,7 +97,7 @@ export const UserLogin = async (request: Request, response: Response, next: Next
       },
       process.env.ACCESS_TOKEN_SECRET as string,
       {
-        expiresIn: '15m',
+        expiresIn: '24h',
       },
     );
 
@@ -108,7 +108,7 @@ export const UserLogin = async (request: Request, response: Response, next: Next
       },
       process.env.REFRESH_TOKEN_SECRET as string,
       {
-        expiresIn: '15m',
+        expiresIn: '7d',
       },
     );
 
@@ -172,7 +172,7 @@ export const RefreshToken = async (request: any, response: Response, next: NextF
       },
       process.env.ACCESS_TOKEN_SECRET as string,
       {
-        expiresIn: '60m',
+        expiresIn: '24h',
       },
     );
 
@@ -336,7 +336,7 @@ export const sellerLogin = async (request: Request, response: Response, next: Ne
         role: 'seller',
       },
       process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: '90m' },
+      { expiresIn: '24h' },
     );
 
     const refreshToken = jwt.sign(

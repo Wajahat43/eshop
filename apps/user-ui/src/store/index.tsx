@@ -38,6 +38,7 @@ export const useStore = create<Store>()(
             };
           } else {
             return {
+              //If product already exists, increase it's quantity
               cart: [...state.cart, { ...product, quantity: 1 }],
             };
           }

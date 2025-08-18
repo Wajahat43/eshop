@@ -95,9 +95,9 @@ const ProductCard = ({ product, isEvent = false }: ProductCardProps) => {
         {/* Content Container */}
         <div className="p-4 space-y-2">
           {/* Shop Name */}
-          <Link href={`/shop/${product?.Shop?.id}`}>
+          <Link href={`/shop/${product?.shop?.id}`}>
             <div className="text-primary text-sm font-medium hover:text-primary/80 transition-colors duration-200">
-              {product?.Shop?.name}
+              {product?.shop?.name}
             </div>
           </Link>
 

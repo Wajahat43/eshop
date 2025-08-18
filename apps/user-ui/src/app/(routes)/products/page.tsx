@@ -1,0 +1,275 @@
+'use client';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { ProductFilters, ProductGrid, Pagination } from '../../../shared/components/organisms';
+import useProducts from '../../../hooks/useProducts';
+import useFilteredProducts from '../../../hooks/useFilteredProducts';
+
+// Predefined colors and sizes
+const PREDEFINED_COLORS = [
+  { id: 'red', label: 'Red', value: 'red' },
+  { id: 'blue', label: 'Blue', value: 'blue' },
+  { id: 'green', label: 'Green', value: 'green' },
+  { id: 'yellow', label: 'Yellow', value: 'yellow' },
+  { id: 'black', label: 'Black', value: 'black' },
+  { id: 'white', label: 'White', value: 'white' },
+  { id: 'purple', label: 'Purple', value: 'purple' },
+  { id: 'orange', label: 'Orange', value: 'orange' },
+  { id: 'pink', label: 'Pink', value: 'pink' },
+  { id: 'brown', label: 'Brown', value: 'brown' },
+];
+
+const PREDEFINED_SIZES = [
+  { id: 'xs', label: 'XS', value: 'xs' },
+  { id: 's', label: 'S', value: 's' },
+  { id: 'm', label: 'M', value: 'm' },
+  { id: 'l', label: 'L', value: 'l' },
+  { id: 'xl', label: 'XL', value: 'xl' },
+  { id: 'xxl', label: 'XXL', value: 'xxl' },
+];
+
+const Page = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // State management
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const [tempPriceRange, setTempPriceRange] = useState<[number, number]>([0, 100000]);
+
+  // Debouncing for price range changes
+  const priceRangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Hooks
+  const { getCategoriesQuery, getProductsQuery } = useProducts({ page, limit: 12 });
+
+  // Convert arrays to comma-separated strings for API
+  const categoriesString = selectedCategories.join(',');
+  const sizesString = selectedSizes.join(',');
+  const colorsString = selectedColors.join(',');
+  const priceRangeString = `${tempPriceRange[0]}-${tempPriceRange[1]}`; // Use tempPriceRange instead of priceRange
+
+  // Check if any filters are applied
+  const hasFilters =
+    selectedCategories.length > 0 ||
+    selectedSizes.length > 0 ||
+    selectedColors.length > 0 ||
+    tempPriceRange[0] !== 0 ||
+    tempPriceRange[1] !== 100000; // Use tempPriceRange for filter detection
+
+  const filteredProductsQuery = useFilteredProducts({
+    priceRange: priceRangeString,
+    categories: categoriesString,
+    colors: colorsString,
+    sizes: sizesString,
+    page,
+    limit: 12,
+  });
+
+  // Use filtered products if filters are applied, otherwise use regular products
+  const activeQuery = hasFilters ? filteredProductsQuery : getProductsQuery;
+
+  // Extract data with proper fallbacks
+  const categories = getCategoriesQuery.data?.categories || [];
+
+  // Handle different API response structures
+  let products = [];
+  let totalPages = 1;
+
+  if (activeQuery.data) {
+    if (activeQuery.data.products) {
+      // Filtered products response
+      products = activeQuery.data.products;
+      totalPages = activeQuery.data.pagination?.totalPages || 1;
+    } else if (activeQuery.data.data) {
+      // Regular products response
+      products = activeQuery.data.data;
+      totalPages = activeQuery.data.totalPages || 1;
+    } else if (Array.isArray(activeQuery.data)) {
+      // Direct array response
+      products = activeQuery.data;
+      totalPages = 1;
+    }
+  }
+
+  // Calculate dynamic price range from actual products
+  const calculatePriceRange = () => {
+    if (products.length === 0) return [0, 100000];
+
+    const prices = products.map((p: any) => p.sale_price).filter((p: any) => p !== undefined && p !== null);
+    if (prices.length === 0) return [0, 100000];
+
+    const minPrice = Math.floor(Math.min(...prices) * 0.9); // 10% below min
+    const maxPrice = Math.ceil(Math.max(...prices) * 1.1); // 10% above max
+
+    return [Math.max(0, minPrice), Math.max(100000, maxPrice)];
+  };
+
+  const [dynamicMinPrice, dynamicMaxPrice] = calculatePriceRange();
+
+  // Update price range when products change (for dynamic range)
+  useEffect(() => {
+    if (products.length > 0) {
+      const [newMin, newMax] = calculatePriceRange();
+      setPriceRange((prev) => [Math.max(prev[0], newMin), Math.min(prev[1], newMax)]);
+      setTempPriceRange((prev) => [Math.max(prev[0], newMin), Math.min(prev[1], newMax)]);
+    }
+  }, [products]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (priceRangeTimeoutRef.current) {
+        clearTimeout(priceRangeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const isLoading = activeQuery.isLoading;
+  const error = activeQuery.error?.message || null;
+
+  // URL state management without page reload
+  useEffect(() => {
+    const urlPriceRange = searchParams.get('priceRange');
+    const urlCategories = searchParams.get('categories');
+    const urlSizes = searchParams.get('sizes');
+    const urlColors = searchParams.get('colors');
+    const urlPage = searchParams.get('page');
+
+    if (urlPriceRange) {
+      const [min, max] = urlPriceRange.split('-').map(Number);
+      setPriceRange([min, max]);
+      setTempPriceRange([min, max]);
+    }
+    if (urlCategories) setSelectedCategories(urlCategories.split(',').filter(Boolean));
+    if (urlSizes) setSelectedSizes(urlSizes.split(',').filter(Boolean));
+    if (urlColors) setSelectedColors(urlColors.split(',').filter(Boolean));
+    if (urlPage) setPage(Number(urlPage));
+  }, [searchParams]);
+
+  // Update URL without page reload using replaceState
+  const updateURL = useCallback(
+    (newFilters: any) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (newFilters.priceRange) {
+        params.set('priceRange', `${newFilters.priceRange[0]}-${newFilters.priceRange[1]}`);
+      }
+      if (newFilters.categories) {
+        params.set('categories', newFilters.categories.join(','));
+      }
+      if (newFilters.sizes) {
+        params.set('sizes', newFilters.sizes.join(','));
+      }
+      if (newFilters.colors) {
+        params.set('colors', newFilters.colors.join(','));
+      }
+      if (newFilters.page) {
+        params.set('page', newFilters.page.toString());
+      }
+
+      // Use replaceState to avoid page reload and maintain scroll position
+      const newUrl = `/products?${params.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    },
+    [searchParams],
+  );
+
+  // Filter change handlers
+  const handlePriceRangeChange = (range: [number, number]) => {
+    setTempPriceRange(range);
+
+    // Clear existing timeout
+    if (priceRangeTimeoutRef.current) {
+      clearTimeout(priceRangeTimeoutRef.current);
+    }
+
+    // Debounce the URL update by 500ms
+    priceRangeTimeoutRef.current = setTimeout(() => {
+      updateURL({ priceRange: range, page: 1 });
+      setPage(1);
+    }, 2000);
+  };
+
+  const handleCategoriesChange = (categories: string[]) => {
+    setSelectedCategories(categories);
+    updateURL({ categories, page: 1 });
+    setPage(1);
+  };
+
+  const handleSizesChange = (sizes: string[]) => {
+    setSelectedSizes(sizes);
+    updateURL({ sizes, page: 1 });
+    setPage(1);
+  };
+
+  const handleColorsChange = (colors: string[]) => {
+    setSelectedColors(colors);
+    updateURL({ colors, page: 1 });
+    setPage(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    updateURL({ page: newPage });
+  };
+
+  // Transform categories data for FilterGroup
+  const categoryOptions = categories.map((cat: any) => ({
+    id: cat,
+    label: cat,
+    value: cat,
+  }));
+
+  return (
+    <div className="min-h-screen bg-background py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">Products</h1>
+          <p className="mt-2 text-muted-foreground">Discover our amazing collection of products</p>
+        </div>
+
+        <div className="flex gap-8">
+          {/* Left Sidebar - Filters */}
+          <div className="flex-shrink-0">
+            <ProductFilters
+              priceRange={tempPriceRange}
+              onPriceRangeChange={handlePriceRangeChange}
+              selectedCategories={selectedCategories}
+              onCategoriesChange={handleCategoriesChange}
+              selectedSizes={selectedSizes}
+              onSizesChange={handleSizesChange}
+              selectedColors={selectedColors}
+              onColorsChange={handleColorsChange}
+              categories={categoryOptions}
+              sizes={PREDEFINED_SIZES}
+              colors={PREDEFINED_COLORS}
+              disabled={isLoading}
+              minPrice={dynamicMinPrice}
+              maxPrice={dynamicMaxPrice}
+            />
+
+            {/* Price range now updates immediately, no need for Apply button */}
+          </div>
+
+          {/* Right Side - Products and Pagination */}
+          <div className="flex-1">
+            <ProductGrid products={products} loading={isLoading} error={error} />
+
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Page;

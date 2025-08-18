@@ -208,7 +208,7 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
         warranty,
         cashOnDelivery: cash_on_delivery,
         slug,
-        shopId: req.seller?.shop?.id!,
+        shopId: req.seller?.shop?.id || '',
         tags: Array.isArray(tags) ? tags : tags.split(','),
         brand,
         video_url,
@@ -245,7 +245,7 @@ export const getShopProducts = async (req: any, res: Response, next: NextFunctio
   try {
     const products = await prisma.products.findMany({
       where: {
-        shopId: req.seller?.shop?.id!,
+        shopId: req.seller?.shop?.id || '',
       },
       include: {
         images: true,
@@ -316,17 +316,13 @@ export const getAllProducts = async (req: any, res: Response, next: NextFunction
     const skip = (page - 1) * limit;
     const type = req.query.type as string;
 
-    // const baseFilter = {
-    //   OR: [
-    //     {
-    //       starting_date: null,
-    //     },
-    //     {
-    //       ending_date: null,
-    //     },
-    //   ],
-    // };
-    const baseFilter = {};
+    // Base filter - always include these
+    const baseFilter = {
+      isDeleted: false, // Only show non-deleted products
+      status: 'ACTIVE' as const, // Only show active products
+      OR: [{ starting_date: null }, { starting_date: { isSet: false } }],
+    };
+
     const orderBy: Prisma.productsOrderByWithRelationInput =
       type === 'latest' ? { createdAt: 'desc' as Prisma.SortOrder } : { createdAt: 'desc' as Prisma.SortOrder };
 
@@ -360,5 +356,424 @@ export const getAllProducts = async (req: any, res: Response, next: NextFunction
     });
   } catch (error) {
     next(error);
+  }
+};
+
+//Get all events (products with starting_date and ending_date)
+export const getAllEvents = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 12;
+    const skip = (page - 1) * limit;
+
+    // Filter for events - products with starting_date
+    const eventFilter = {
+      isDeleted: false, // Only show non-deleted events
+      status: 'ACTIVE' as const, // Only show active events
+      starting_date: {
+        not: null,
+        isSet: true,
+      },
+    };
+
+    const [events, total] = await Promise.all([
+      prisma.products.findMany({
+        where: eventFilter,
+        orderBy: {
+          starting_date: 'asc' as Prisma.SortOrder, // Order by upcoming events first
+        },
+        skip,
+        take: limit,
+        include: {
+          images: true,
+          shop: true,
+        },
+      }),
+      prisma.products.count({ where: eventFilter }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      events,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//Get Product details
+export const getProductDetails = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const product = await prisma.products.findUnique({
+      where: {
+        slug: req.params.slug,
+      },
+      include: {
+        images: true,
+        shop: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      product,
+    });
+  } catch (error) {
+    console.log('Error in product', error);
+    return next(error);
+  }
+};
+
+//Get filtered products
+export const getFilteredProducts = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { priceRange = '0-1000000', categories = '', colors = '', sizes = '', page = '1', limit = '12' } = req.query;
+
+    // Parse price range
+    const [minPrice, maxPrice] = priceRange.split('-').map(Number);
+
+    // Parse page and limit
+    const parsedPage = Number(page);
+    const parsedLimit = Number(limit);
+
+    // Calculate products to skip
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    // Create base filters object - always include these
+
+    const filters: any = {
+      isDeleted: false, // Only show non-deleted products
+      status: 'ACTIVE' as const, // Only show active products
+      OR: [{ starting_date: null }, { starting_date: { isSet: false } }], // Only show products without start dates (regular products, not events)
+      sale_price: {
+        gte: minPrice,
+        lte: maxPrice,
+      },
+    };
+
+    // Add category filter if provided
+    if (categories) {
+      const categoryList = categories.split(',').map((cat: string) => cat.trim());
+      // Use case-insensitive comparison with regex
+      filters.category = {
+        mode: 'insensitive',
+        in: categoryList,
+      };
+    }
+
+    // Add colors filter if provided
+    if (colors) {
+      const colorList = colors.split(',').map((color: string) => color.trim());
+      // Use case-insensitive comparison for colors
+      filters.colors = {
+        hasSome: colorList.map((color: string) => ({
+          mode: 'insensitive' as const,
+          equals: color,
+        })),
+      };
+    }
+
+    // Add sizes filter if provided
+    if (sizes) {
+      const sizeList = sizes.split(',').map((size: string) => size.trim());
+      // Use case-insensitive comparison for sizes
+      filters.sizes = {
+        hasSome: sizeList.map((size: string) => ({
+          mode: 'insensitive' as const,
+          equals: size,
+        })),
+      };
+    }
+
+    // Fetch products and total from prisma
+    const [products, total] = await Promise.all([
+      prisma.products.findMany({
+        where: filters,
+        skip,
+        take: parsedLimit,
+        include: {
+          images: true,
+          shop: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.products.count({ where: filters }),
+    ]);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(total / parsedLimit);
+
+    res.status(200).json({
+      success: true,
+      products,
+      pagination: {
+        total,
+        page: parsedPage,
+        totalPages,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting filtered products:', error);
+    return next(error);
+  }
+};
+
+//Get filtered events (products with dates)
+export const getFilteredEvents = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { priceRange = '0-1000000', categories = '', colors = '', sizes = '', page = '1', limit = '12' } = req.query;
+
+    // Parse price range
+    const [minPrice, maxPrice] = priceRange.split('-').map(Number);
+
+    // Parse page and limit
+    const parsedPage = Number(page);
+    const parsedLimit = Number(limit);
+
+    // Calculate products to skip
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    // Create filters object for events (products with dates)
+    const filters: any = {
+      isDeleted: false, // Only show non-deleted events
+      status: 'ACTIVE' as const, // Only show active events
+      sale_price: {
+        gte: minPrice,
+        lte: maxPrice,
+      },
+      starting_date: {
+        not: null,
+        isSet: true,
+      },
+    };
+
+    // Add category filter if provided
+    if (categories) {
+      const categoryList = categories.split(',').map((cat: string) => cat.trim());
+      filters.category = { in: categoryList };
+    }
+
+    // Add colors filter if provided
+    if (colors) {
+      const colorList = colors.split(',').map((color: string) => color.trim());
+      filters.colors = { hasSome: colorList };
+    }
+
+    // Add sizes filter if provided
+    if (sizes) {
+      const sizeList = sizes.split(',').map((size: string) => size.trim());
+      filters.sizes = { hasSome: sizeList };
+    }
+
+    // Fetch events and total from prisma
+    const [events, total] = await Promise.all([
+      prisma.products.findMany({
+        where: filters,
+        skip,
+        take: parsedLimit,
+        include: {
+          images: true,
+          shop: true,
+        },
+        orderBy: {
+          starting_date: 'asc',
+        },
+      }),
+      prisma.products.count({ where: filters }),
+    ]);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(total / parsedLimit);
+
+    res.status(200).json({
+      success: true,
+      events,
+      pagination: {
+        total,
+        page: parsedPage,
+        totalPages,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting filtered events:', error);
+    return next(error);
+  }
+};
+
+//Get filtered shops
+export const getFilteredShops = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { categories = '', countries = '', page = '1', limit = '12' } = req.query;
+
+    // Parse page and limit
+    const parsedPage = Number(page);
+    const parsedLimit = Number(limit);
+
+    // Calculate shops to skip
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    // Create filters object
+    const filters: any = {};
+
+    // Add category filter if provided
+    if (categories) {
+      const categoryList = categories.split(',').map((cat: string) => cat.trim());
+      filters.category = { in: categoryList };
+    }
+
+    // Add country filter if provided
+    if (countries) {
+      const countryList = countries.split(',').map((country: string) => country.trim());
+      filters.country = { in: countryList };
+    }
+
+    // Fetch shops and total from prisma
+    const [shops, total] = await Promise.all([
+      prisma.shops.findMany({
+        where: filters,
+        skip,
+        take: parsedLimit,
+        include: {
+          sellers: true,
+          products: {
+            where: {
+              isDeleted: false,
+            },
+            include: {
+              images: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.shops.count({ where: filters }),
+    ]);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(total / parsedLimit);
+
+    res.status(200).json({
+      success: true,
+      shops,
+      pagination: {
+        total,
+        page: parsedPage,
+        totalPages,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting filtered shops:', error);
+    return next(error);
+  }
+};
+
+//Search products
+export const searchProducts = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || typeof q !== 'string') {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
+
+    const products = await prisma.products.findMany({
+      where: {
+        OR: [
+          {
+            title: {
+              contains: q,
+              mode: 'insensitive',
+            },
+          },
+          {
+            short_description: {
+              contains: q,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+      },
+      take: 10,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    console.error('Error searching products:', error);
+    return next(error);
+  }
+};
+
+//Get top shops based on product analytics
+export const getTopShops = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    // Get top shops based on total product views and purchases
+    // const topShops = await prisma.orders.groupBy({
+    //   by: ['shopId'],
+    //   _sum: {
+    //     total: true,
+    //   },
+    //   orderBy: {
+    //     _sum: {
+    //       views: 'desc',
+    //     },
+    //   },
+    //   take: 10,
+    // });
+
+    const topShops = [] as any;
+
+    // Get shop details for the top shops
+    const shopIds = topShops.map((shop: any) => shop.shopId);
+    const shops = await prisma.shops.findMany({
+      where: {
+        id: {
+          in: shopIds,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        coverBanner: true,
+        address: true,
+        ratings: true,
+        category: true,
+      },
+    });
+
+    // Combine analytics with shop details
+    const topShopsWithDetails = topShops.map((shopAnalytics: any) => {
+      const shop = shops.find((s) => s.id === shopAnalytics.shopId);
+      return {
+        shop,
+        totalSales: shopAnalytics._sum.total || 0,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      topShops: topShopsWithDetails,
+    });
+  } catch (error) {
+    console.error('Error getting top shops:', error);
+    return next(error);
   }
 };

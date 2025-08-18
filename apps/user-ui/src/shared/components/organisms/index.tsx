@@ -1,2 +1,12 @@
-export { default as Hero } from './homepage/hero';
+export { default as ProductDetails } from './product-details';
 export { default as ProductCard } from './product-card';
+export { default as ProductFilters } from './product-filters';
+export { default as ProductGrid } from './product-grid';
+export { default as Pagination } from './pagination';
+export { default as Hero } from './homepage/hero';
+export { default as ShopCard } from './shop-card';
+export { default as ShopGrid } from './shop-grid';
+export { default as ShopFilters } from './shop-filters';
+export { default as LatestProducts } from './latest-products';
+export { default as TopShops } from './top-shops';
+export { default as LatestEvents } from './latest-events';
