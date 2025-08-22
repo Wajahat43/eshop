@@ -29,6 +29,8 @@ model users {
   reviews     shopReview[] 
   analytics   userAnalytics?
   addresses   userAddresses[]
+  orders      orders[]
+  notificationsCreated notifications[] @relation("NotificationCreator")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -63,6 +65,7 @@ model shops {
   updatedAt   DateTime @updatedAt
   products products[]
   productAnalytics productAnalytics[]
+  orders orders[]
 }
 
 model sellers {
@@ -137,6 +140,7 @@ model products {
   shop shops @relation(fields: [shopId], references: [id])
   totalSales Int @default(0)
   analytics productAnalytics?
+  orderItems orderItems[]
 }
 
 model userAnalytics {
@@ -165,6 +169,9 @@ model userAddresses {
   isDefault Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Relations
+  orders    orders[]
 }
 
 model productAnalytics {
@@ -182,4 +189,66 @@ model productAnalytics {
   updatedAt     DateTime @updatedAt
   product       products @relation(fields: [productId], references: [id])
   shop          shops @relation(fields: [shopId], references: [id])
+}
+
+// Order related models
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model orders {
+  id                String @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String @db.ObjectId
+  shopId            String @db.ObjectId
+  total             Float
+  status            OrderStatus @default(PENDING)
+  shippingAddressId String? @db.ObjectId
+  couponCode        String?
+  discountAmount    Float @default(0)
+  trackingNumber    String?
+  estimatedDelivery DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  user              users @relation(fields: [userId], references: [id])
+  shop              shops @relation(fields: [shopId], references: [id])
+  shippingAddress   userAddresses? @relation(fields: [shippingAddressId], references: [id])
+  items             orderItems[]
+}
+
+model orderItems {
+  id               String @id @default(auto()) @map("_id") @db.ObjectId
+  orderId          String @db.ObjectId
+  productId        String @db.ObjectId
+  quantity         Int
+  price            Float
+  selectedOptions  Json? // Store selected colors, sizes, etc.
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relations
+  order            orders @relation(fields: [orderId], references: [id])
+  product          products @relation(fields: [productId], references: [id])
+}
+
+model notifications {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  message      String
+  creatorId    String @db.ObjectId
+  receiverId   String // Can be userId, sellerId, or "admin"
+  redirect_link String?
+  isRead       Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  creator      users @relation("NotificationCreator", fields: [creatorId], references: [id])
 }

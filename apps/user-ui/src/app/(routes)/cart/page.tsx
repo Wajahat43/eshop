@@ -11,6 +11,7 @@ import useLocationTracking from 'apps/user-ui/src/hooks/useLocationTracking';
 import useDeviceTracking from 'apps/user-ui/src/hooks/useDeviceTracking';
 import useProducts from 'apps/user-ui/src/hooks/useProducts';
 import { useUserAddresses } from 'apps/user-ui/src/hooks/useUserAddresses';
+import usePaymentSession from 'apps/user-ui/src/hooks/usePaymentSession';
 
 const CartPage = () => {
   const { cart, removeFromCart, setCartQuantity } = useStore();
@@ -20,6 +21,7 @@ const CartPage = () => {
 
   const { getProductsQuery } = useProducts({});
   const { data: addresses = [], isLoading: addressesLoading } = useUserAddresses();
+  const { createPaymentSession, isLoading: isCreatingSession, error: sessionError } = usePaymentSession();
 
   const [coupon, setCoupon] = useState('');
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
@@ -278,21 +280,39 @@ const CartPage = () => {
           <hr />
           <button
             className={`w-full py-3 rounded-lg font-semibold text-lg transition-colors ${
-              selectedAddressId
+              selectedAddressId && !isCreatingSession
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                 : 'bg-muted text-muted-foreground cursor-not-allowed'
             }`}
-            disabled={!selectedAddressId}
-            onClick={() => {
+            disabled={!selectedAddressId || isCreatingSession}
+            onClick={async () => {
               if (!selectedAddressId) {
                 alert('Please select a shipping address');
-              } else {
-                // Proceed to checkout logic here
-                console.log('Proceeding to checkout with address:', selectedAddressId);
+                return;
+              }
+
+              if (!user?.id) {
+                alert('Please log in to proceed with checkout');
+                return;
+              }
+
+              try {
+                await createPaymentSession({
+                  cart: enrichedCart,
+                  userId: user.id,
+                  selectedAddressId,
+                  coupon: coupon || undefined,
+                });
+              } catch (err) {
+                console.error('Failed to create payment session:', err);
               }
             }}
           >
-            {selectedAddressId ? 'Proceed to Checkout' : 'Select Shipping Address'}
+            {isCreatingSession
+              ? 'Creating Session...'
+              : selectedAddressId
+              ? 'Proceed to Checkout'
+              : 'Select Shipping Address'}
           </button>
         </div>
       </div>

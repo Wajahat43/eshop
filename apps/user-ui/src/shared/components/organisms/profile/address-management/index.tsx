@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { Plus, MapPin, Loader2 } from 'lucide-react';
 import {

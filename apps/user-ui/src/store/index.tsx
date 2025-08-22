@@ -17,6 +17,7 @@ type Store = {
   addToCart: (Product: Product, user: any, location: any, deviceInfo: string) => void;
   removeFromCart: (id: string, user: any, location: any, deviceInfo: string) => void;
   setCartQuantity: (productId: string, quantity: number) => void;
+  clearCart: () => void;
   addToWishlist: (product: Product, user: any, location: any, deviceInfo: string) => void;
   removeFromWishlist: (id: string, user: any, location: any, deviceInfo: string) => void;
 };
@@ -61,6 +62,10 @@ export const useStore = create<Store>()(
         set((state) => ({
           cart: state.cart.map((p) => (p.id === productId ? { ...p, quantity } : p)),
         }));
+      },
+
+      clearCart: () => {
+        set({ cart: [] });
       },
 
       removeFromCart: (id, user, location, deviceInfo) => {

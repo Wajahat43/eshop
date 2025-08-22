@@ -16,9 +16,7 @@ import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 import { setCookie } from '../utils/cookies/setCookie';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 //Register a new user.
 export const UserRegistration = async (request: Request, response: Response, next: NextFunction) => {
@@ -618,11 +616,33 @@ export const createStripeConnectLink = async (request: Request, response: Respon
     const seller = await prisma.sellers.findUnique({ where: { id: sellerId } });
     if (!seller) return next(new ValidationError('Seller account not found.'));
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+    // Check if seller already has a Stripe account
+    if (seller.stripeId) {
+      // Check if the existing account is in the wrong region
+      try {
+        const existingAccount = await stripe.accounts.retrieve(seller.stripeId);
+        if (existingAccount.country !== seller.country) {
+          // Delete the old account and create a new one
+          await stripe.accounts.del(seller.stripeId);
+          await prisma.sellers.update({
+            where: { id: sellerId },
+            data: { stripeId: null },
+          });
+        }
+      } catch (error) {
+        // If account retrieval fails, assume it's invalid and create a new one
+        await prisma.sellers.update({
+          where: { id: sellerId },
+          data: { stripeId: null },
+        });
+      }
+    }
+
+    // Create new Stripe account with seller's actual country
     const account = await stripe.accounts.create({
       type: 'express',
       email: seller.email,
-      country: 'AU',
+      country: seller.country, // Use seller's actual country instead of hardcoded 'AU'
       capabilities: {
         transfers: { requested: true },
         card_payments: { requested: true },
