@@ -1,13 +1,12 @@
 import Redis from 'ioredis';
 
-let redis: Redis | null = null;
+let redis: Redis;
 
 try {
   if (process.env.REDIS_DATABASE_URI) {
     redis = new Redis(process.env.REDIS_DATABASE_URI, {
       maxRetriesPerRequest: 3,
       lazyConnect: true,
-      retryDelayOnFailover: 100,
     });
 
     redis.on('error', (error) => {
@@ -17,6 +16,8 @@ try {
     redis.on('connect', () => {
       console.log('Connected to Redis');
     });
+  } else {
+    console.warn('REDIS_DATABASE_URI environment variable is not set');
   }
 } catch (error) {
   console.warn('Failed to initialize Redis:', error);

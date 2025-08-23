@@ -10,26 +10,58 @@ import { twMerge } from 'tailwind-merge';
 const HeaderBottom = () => {
   const [show, setShow] = React.useState(false);
   const [isSticky, setIsSticky] = React.useState(false);
-  // const { user } = useUser();
+  const scrollThreshold = 100;
+  const buffer = 20; // Buffer to prevent flickering around threshold
 
-  //Track scroll position
+  //Track scroll position with throttling
+  const handleScroll = React.useCallback(() => {
+    const currentScrollY = window.scrollY;
+    const documentHeight = document.documentElement.scrollHeight;
+    const viewportHeight = window.innerHeight;
+
+    // Don't handle scroll if there's not enough content to scroll
+    if (documentHeight <= viewportHeight) {
+      return;
+    }
+
+    // Only update state if we've crossed the threshold with buffer
+    if (currentScrollY > scrollThreshold + buffer && !isSticky) {
+      setIsSticky(true);
+    } else if (currentScrollY < scrollThreshold - buffer && isSticky) {
+      setIsSticky(false);
+    }
+  }, [isSticky]);
+
   React.useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 100) {
-        setIsSticky(true);
-      } else {
-        setIsSticky(false);
+    let ticking = false;
+    let isInitialized = false;
+
+    // Small delay to prevent flickering on initial load
+    const initTimer = setTimeout(() => {
+      isInitialized = true;
+    }, 100);
+
+    const throttledScrollHandler = () => {
+      if (!ticking && isInitialized) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('scroll', throttledScrollHandler, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', throttledScrollHandler);
+      clearTimeout(initTimer);
+    };
+  }, [handleScroll]);
 
   return (
     <div
       className={twMerge(
-        'w-full transition-all duration-300',
+        'w-full transition-all duration-300 ease-out',
         isSticky
           ? 'fixed top-0 left-0 z-[100] h-20 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-lg'
           : 'relative',
@@ -39,7 +71,7 @@ const HeaderBottom = () => {
         {/**All Dropdowns */}
         <div
           className={twMerge(
-            'w-[260px] cursor-pointer flex items-center justify-between px-5 h-[50px] bg-primary',
+            'w-[260px] cursor-pointer flex items-center justify-between px-5 h-[50px] bg-primary transition-all duration-300',
             isSticky && '-mb-2',
           )}
           onClick={() => setShow(!show)}
@@ -55,7 +87,7 @@ const HeaderBottom = () => {
         {show && (
           <div
             className={twMerge(
-              'absolute left-0 min-w-[260px] min-h-[400px] bg-muted/95 backdrop-blur-md text-muted-foreground border border-border/50 shadow-xl',
+              'absolute left-0 min-w-[260px] min-h-[400px] bg-muted/95 backdrop-blur-md text-muted-foreground border border-border/50 shadow-xl transition-all duration-300',
               isSticky ? 'top-[70px]' : 'top-[50px]',
             )}
           />
@@ -70,8 +102,15 @@ const HeaderBottom = () => {
           ))}
         </div>
 
-        {/** */}
-        {isSticky && <ActionItems />}
+        {/** Sticky Action Items - Always render but conditionally show */}
+        <div
+          className={twMerge(
+            'transition-opacity duration-300',
+            isSticky ? 'opacity-100' : 'opacity-0 pointer-events-none',
+          )}
+        >
+          <ActionItems />
+        </div>
       </div>
     </div>
   );

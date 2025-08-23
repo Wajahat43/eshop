@@ -8,10 +8,8 @@ import Box from '../box';
 import { Sidebar } from './sidebar-styles';
 import Link from 'next/link';
 import {
-  Bell,
   BellRing,
   Calendar,
-  DollarSign,
   Home,
   Inbox,
   ListOrdered,
@@ -79,12 +77,12 @@ const SidebarWrapper = () => {
                 isActive={activeSideBar === '/dashboard/orders'}
                 href="/dashboard/orders"
               />
-              <SidebarItem
+              {/* <SidebarItem
                 title="Payments"
                 icon={<DollarSign />}
                 isActive={activeSideBar === '/dashboard/payments'}
                 href="/dashboard/payments"
-              />
+              /> */}
             </SidebarMenu>
 
             <SidebarMenu title="Products">
@@ -106,14 +104,14 @@ const SidebarWrapper = () => {
               <SidebarItem
                 title="Create Event"
                 icon={<SquarePlus />}
-                isActive={activeSideBar === '/create-event'}
-                href="/create-event"
+                isActive={activeSideBar === '/dashboard/create-event'}
+                href="/dashboard/create-event"
               />
               <SidebarItem
                 title="All Events"
                 icon={<Calendar />}
-                isActive={activeSideBar === '/all-events'}
-                href="/all-events"
+                isActive={activeSideBar === '/dashboard/all-events'}
+                href="/dashboard/all-events"
               />
             </SidebarMenu>
 

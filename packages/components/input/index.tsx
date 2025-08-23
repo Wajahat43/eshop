@@ -23,14 +23,14 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>((pr
   const { label, placeholder, type = 'text', error, className, ...restProps } = props;
 
   const inputClasses = twMerge(
-    'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm',
-    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
-    'placeholder-gray-400 text-gray-900',
-    error && 'border-red-500 focus:ring-red-500 focus:border-red-500',
+    'w-full px-3 py-2 border border-input rounded-md shadow-sm',
+    'focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring',
+    'placeholder:text-muted-foreground text-foreground bg-background',
+    error && 'border-destructive focus:ring-destructive focus:border-destructive',
     className,
   );
 
-  const labelClasses = 'block text-sm font-medium text-gray-700 mb-1';
+  const labelClasses = 'block text-sm font-medium text-foreground mb-1';
 
   if (type === 'textarea') {
     const textareaProps = restProps as React.TextareaHTMLAttributes<HTMLTextAreaElement>;
@@ -43,7 +43,7 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>((pr
           className={inputClasses}
           {...textareaProps}
         />
-        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+        {error && <p className="text-destructive text-sm mt-1">{error}</p>}
       </div>
     );
   }
@@ -59,7 +59,7 @@ const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>((pr
         className={inputClasses}
         {...inputProps}
       />
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      {error && <p className="text-destructive text-sm mt-1">{error}</p>}
     </div>
   );
 });

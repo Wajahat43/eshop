@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useUser from '../../../hooks/userUser';
+import { useUserOrders } from '../../../hooks/useUserOrders';
 import { ProfileTabs, ProfileContent, ProfileStats } from '../../../shared/components/organisms/profile';
 import { Spinner } from '../../../shared/components/spinner';
 
@@ -10,11 +11,29 @@ const ProfilePage: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isPending, isError } = useUser();
+  const { data: ordersData } = useUserOrders();
 
   // Get active tab from query params, default to 'profile'
   const [activeTab, setActiveTab] = useState(() => {
     return searchParams.get('tab') || 'profile';
   });
+
+  // Calculate real stats from user orders
+  const orderStats = useMemo(() => {
+    const orders = ordersData?.data || [];
+
+    const totalOrders = orders.length;
+    const processingOrders = orders.filter((order) =>
+      ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED'].includes(order.status),
+    ).length;
+    const completedOrders = orders.filter((order) => order.status === 'DELIVERED').length;
+
+    return {
+      totalOrders,
+      processingOrders,
+      completedOrders,
+    };
+  }, [ordersData?.data]);
 
   // Update URL when tab changes
   useEffect(() => {
@@ -49,13 +68,6 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  // Mock data for stats - replace with actual API calls
-  const mockStats = {
-    totalOrders: 12,
-    processingOrders: 3,
-    completedOrders: 9,
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -70,7 +82,7 @@ const ProfilePage: React.FC = () => {
         {/* Stats Grid */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-foreground mb-4">Order Overview</h2>
-          <ProfileStats {...mockStats} />
+          <ProfileStats {...orderStats} />
         </div>
 
         {/* Main Content */}

@@ -1,6 +1,8 @@
 import React from 'react';
 import UserProfileInfo from '../../../molecules/profile/user-profile-info';
 import AddressManagement from '../address-management';
+import { UserOrdersPage } from '../user-orders';
+import PasswordManagement from '../password-management';
 
 interface ProfileContentProps {
   activeTab: string;
@@ -14,14 +16,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ activeTab, user }) => {
         return <UserProfileInfo user={user} />;
 
       case 'orders':
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">My Orders</h2>
-            <div className="bg-card border border-border rounded-lg p-6">
-              <p className="text-muted-foreground">Orders content will be displayed here</p>
-            </div>
-          </div>
-        );
+        return <UserOrdersPage />;
 
       case 'notifications':
         return (
@@ -37,14 +32,7 @@ const ProfileContent: React.FC<ProfileContentProps> = ({ activeTab, user }) => {
         return <AddressManagement />;
 
       case 'password':
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">Change Password</h2>
-            <div className="bg-card border border-border rounded-lg p-6">
-              <p className="text-muted-foreground">Password change form will be displayed here</p>
-            </div>
-          </div>
-        );
+        return <PasswordManagement />;
 
       default:
         return <UserProfileInfo user={user} />;

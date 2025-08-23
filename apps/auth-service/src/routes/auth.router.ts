@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 
 import {
   addUserAddress,
+  changeUserPassword,
   createNewShop,
   createStripeConnectLink,
   deleteUserAddress,
@@ -49,5 +50,8 @@ router.post('/user-addresses', isAuthenticated, addUserAddress);
 router.put('/user-addresses/:id', isAuthenticated, updateUserAddress);
 router.delete('/user-addresses/:id', isAuthenticated, deleteUserAddress);
 router.patch('/user-addresses/:id/set-default', isAuthenticated, setDefaultAddress);
+
+// User Password Management
+router.put('/change-password', isAuthenticated, changeUserPassword);
 
 export default router;

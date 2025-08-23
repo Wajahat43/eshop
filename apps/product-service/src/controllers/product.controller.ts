@@ -167,6 +167,8 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
       subCategory,
       customProperties,
       images = [],
+      starting_date,
+      ending_date,
     } = req.body;
 
     const requiredFields = [
@@ -200,6 +202,21 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
       next(new ValidationError('Slug is already used. Please try a different slug'));
     }
 
+    // If dates are provided, validate they are both present and start < end
+    if ((starting_date && !ending_date) || (!starting_date && ending_date)) {
+      return res.status(400).json({ message: 'Both starting_date and ending_date are required for events' });
+    }
+    if (starting_date && ending_date) {
+      const start = new Date(starting_date);
+      const end = new Date(ending_date);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({ message: 'Invalid event dates' });
+      }
+      if (end <= start) {
+        return res.status(400).json({ message: 'ending_date must be after starting_date' });
+      }
+    }
+
     const newProduct = await prisma.products.create({
       data: {
         title,
@@ -223,6 +240,8 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
         custom_specifications: custom_specifications || {},
         custom_properties: customProperties || {},
         status: 'ACTIVE',
+        starting_date: starting_date ? new Date(starting_date) : undefined,
+        ending_date: ending_date ? new Date(ending_date) : undefined,
         images: {
           create:
             images

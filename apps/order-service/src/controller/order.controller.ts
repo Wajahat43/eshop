@@ -44,6 +44,27 @@ interface WebhookRequest extends Request {
   rawBody: Buffer;
 }
 
+interface GetOrderDetailsRequest extends Request {
+  params: {
+    orderId: string;
+  };
+}
+
+interface UpdateOrderStatusRequest extends Request {
+  params: {
+    orderId: string;
+  };
+  body: {
+    status: 'PENDING' | 'PAID' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
+    trackingNumber?: string;
+    estimatedDelivery?: string;
+  };
+  seller?: {
+    id: string;
+    shop?: any;
+  };
+}
+
 /**
  * Helper method to retrieve session data from Redis
  */
@@ -406,5 +427,341 @@ export const createOrder = async (req: WebhookRequest, res: Response, next: Next
   } catch (error) {
     console.error('Error in createOrder webhook:', error);
     return next(error);
+  }
+};
+
+/**
+ * Get orders for the logged-in seller's shop
+ */
+export const getSellerOrders = async (req: any, res: Response) => {
+  try {
+    // Check if seller and shop information exists
+    if (!req.seller || !req.seller.shop) {
+      return res.status(403).json({
+        success: false,
+        message: 'Seller shop not found',
+      });
+    }
+
+    const shop = await prisma.shops.findUnique({
+      where: {
+        sellerId: req.seller.id,
+      },
+    });
+
+    // Fetch orders for the seller's shop with user information
+    const orders = await prisma.orders.findMany({
+      where: {
+        shopId: shop?.id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: {
+              select: {
+                url: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: orders,
+      total: orders.length,
+    });
+  } catch (error) {
+    console.error('Error fetching seller orders:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch seller orders',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
+/**
+ * Get orders for the logged-in user from all shops
+ */
+export const getUserOrders = async (req: any, res: Response) => {
+  try {
+    // Check if user information exists
+    if (!req.user || !req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+    }
+
+    // Fetch orders for the user from all shops
+    const orders = await prisma.orders.findMany({
+      where: {
+        userId: req.user.id,
+      },
+      include: {
+        shop: {
+          select: {
+            id: true,
+            name: true,
+            avatar: {
+              select: {
+                url: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: orders,
+      total: orders.length,
+    });
+  } catch (error) {
+    console.error('Error fetching user orders:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user orders',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
+/**
+ * Get order details by order ID
+ */
+export const getOrderDetails = async (req: GetOrderDetailsRequest, res: Response) => {
+  try {
+    const { orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order ID is required',
+      });
+    }
+
+    // Fetch order with basic information
+    const order = await prisma.orders.findUnique({
+      where: {
+        id: orderId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: {
+              select: {
+                url: true,
+              },
+            },
+          },
+        },
+        shop: {
+          select: {
+            id: true,
+            name: true,
+            avatar: {
+              select: {
+                url: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    // Fetch order items with product details
+    const orderItems = await prisma.orderItems.findMany({
+      where: {
+        orderId: orderId,
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            title: true,
+            images: {
+              select: {
+                id: true,
+                url: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Fetch shipping address if exists
+    let shippingAddress = null;
+    if (order.shippingAddressId) {
+      shippingAddress = await prisma.userAddresses.findUnique({
+        where: {
+          id: order.shippingAddressId,
+        },
+      });
+    }
+
+    // Fetch coupon details if exists
+    let coupon = null;
+    if (order.couponCode) {
+      coupon = await prisma.discount_codes.findUnique({
+        where: {
+          discountCode: order.couponCode,
+        },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        order,
+        items: orderItems,
+        shippingAddress,
+        coupon,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching order details:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch order details',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
+/**
+ * Update order status
+ */
+export const updateOrderStatus = async (req: UpdateOrderStatusRequest, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const { status, trackingNumber, estimatedDelivery } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order ID is required',
+      });
+    }
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status is required',
+      });
+    }
+
+    // Validate status enum
+    const validStatuses = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be one of: ' + validStatuses.join(', '),
+      });
+    }
+
+    // Check if order exists and belongs to the seller's shop
+    const existingOrder = await prisma.orders.findUnique({
+      where: {
+        id: orderId,
+      },
+      include: {
+        shop: {
+          select: {
+            id: true,
+            sellerId: true,
+          },
+        },
+      },
+    });
+
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    // Verify the order belongs to the seller's shop
+    if (existingOrder.shop.sellerId !== req.seller?.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only update orders from your own shop',
+      });
+    }
+
+    // Prepare update data
+    const updateData: any = {
+      status,
+      updatedAt: new Date(),
+    };
+
+    // Add optional fields if provided
+    if (trackingNumber !== undefined) {
+      updateData.trackingNumber = trackingNumber;
+    }
+
+    if (estimatedDelivery !== undefined) {
+      updateData.estimatedDelivery = new Date(estimatedDelivery);
+    }
+
+    // Update the order
+    const updatedOrder = await prisma.orders.update({
+      where: {
+        id: orderId,
+      },
+      data: updateData,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        shop: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order status updated successfully',
+      data: updatedOrder,
+    });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update order status',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 };

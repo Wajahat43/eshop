@@ -607,6 +607,58 @@ export const setDefaultAddress = async (request: any, response: Response, next: 
   }
 };
 
+//Change user password
+export const changeUserPassword = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const userId = request.user.id;
+    const { currentPassword, newPassword } = request.body;
+
+    // Validate required fields
+    if (!currentPassword || !newPassword) {
+      return next(new ValidationError('Current password and new password are required!'));
+    }
+
+    // Get user with current password
+    const user = await prisma.users.findUnique({ where: { id: userId } });
+    if (!user) {
+      return next(new AuthError('User not found!'));
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password ?? '');
+    if (!isCurrentPasswordValid) {
+      return next(new AuthError('Current password is incorrect!'));
+    }
+
+    // Check if new password is different from current
+    const isNewPasswordSame = await bcrypt.compare(newPassword, user.password ?? '');
+    if (isNewPasswordSame) {
+      return next(new ValidationError('New password must be different from current password!'));
+    }
+
+    // Validate new password length
+    if (newPassword.length < 6) {
+      return next(new ValidationError('New password must be at least 6 characters long!'));
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user password
+    await prisma.users.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
+
+    response.status(200).json({
+      success: true,
+      message: 'Password changed successfully!',
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 //Create stripe connect account link
 export const createStripeConnectLink = async (request: Request, response: Response, next: NextFunction) => {
   try {
