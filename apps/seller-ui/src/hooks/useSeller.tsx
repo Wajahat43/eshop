@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation';
 //Fetch user data from API
 const fetchSeller = async () => {
   const response = await axiosInstance.get('/api/logged-in-seller');
-  if (!response.data?.user) {
+  if (!response.data?.seller) {
     return null;
   }
-  return response.data.user;
+  return response.data.seller;
 };
 
 const useSeller = () => {

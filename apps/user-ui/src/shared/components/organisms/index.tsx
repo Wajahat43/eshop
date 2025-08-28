@@ -11,3 +11,4 @@ export { default as ShopFilters } from './shop-filters';
 export { default as ShopGrid } from './shop-grid';
 export { default as TopShops } from './top-shops';
 export * from './profile';
+export * from './chat';

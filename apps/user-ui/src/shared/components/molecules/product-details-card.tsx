@@ -11,6 +11,7 @@ import { useStore } from 'apps/user-ui/src/store';
 import useUser from 'apps/user-ui/src/hooks/userUser';
 import useLocationTracking from 'apps/user-ui/src/hooks/useLocationTracking';
 import useDeviceTracking from 'apps/user-ui/src/hooks/useDeviceTracking';
+import { useCreateConversation } from 'apps/user-ui/src/hooks/chat';
 
 interface ProductDetailsCardProps {
   product: any;
@@ -27,6 +28,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   const { user } = useUser();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
+  const createConversationMutation = useCreateConversation();
 
   const addToCart = useStore((state) => state.addToCart);
   const addToWishlist = useStore((state) => state.addToWishlist);
@@ -126,11 +128,27 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
               </div>
 
               <button
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shadow-sm hover:shadow-md"
-                onClick={() => router.push(`/inbox?shopId=${product?.shop?.id}`)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={createConversationMutation.isPending}
+                onClick={async () => {
+                  if (!product?.shop?.id) return;
+
+                  try {
+                    const result = await createConversationMutation.mutateAsync({
+                      sellerId: product.shop.sellerId,
+                    });
+                    // Redirect to inbox with conversation ID for more reliable navigation
+                    router.push(`/inbox?conversationId=${result.conversation.id}`);
+                  } catch (error) {
+                    console.error('Failed to create conversation:', error);
+                    // You might want to show a toast notification here
+                  }
+                }}
               >
                 <MessageCircle size={16} />
-                <span className="text-sm font-medium">Chat</span>
+                <span className="text-sm font-medium">
+                  {createConversationMutation.isPending ? 'Creating Chat...' : 'Chat'}
+                </span>
               </button>
             </div>
           </div>
