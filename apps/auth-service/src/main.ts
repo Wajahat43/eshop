@@ -10,9 +10,13 @@ import router from './routes/auth.router';
 
 const app = express();
 
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
 app.use(
   cors({
-    origin: ['http://localhost:3000'],
+    origin: allowedOrigins,
     allowedHeaders: ['Authorization', 'Content-Type'],
     credentials: true,
   }),
@@ -35,7 +39,7 @@ app.use('/api', router);
 
 app.use(errorMiddleware);
 
-const port = process.env.port ?? 6001;
+const port = process.env.PORT ?? 6001;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/api`);
   console.log(`Swagger docs available at http://localhost:${port}/docs`);

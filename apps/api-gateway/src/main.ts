@@ -9,9 +9,13 @@ import initializeSiteConfig from './libs/initializeSiteConfig';
 
 const app = express();
 
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: allowedOrigins,
     allowedHeaders: ['Authorization', 'Content-Type'],
     credentials: true,
   }),
@@ -41,12 +45,12 @@ app.get('/gateway-health', (req, res) => {
 });
 
 // Specific routes must come before the catch-all route
-app.use('/product', proxy('http://localhost:6002'));
-//app.use('/seller', proxy('http://localhost:6003'));
-app.use('/order', proxy('http://localhost:6004'));
-app.use('/chat', proxy('http://localhost:6005'));
+app.use('/product', proxy(process.env.PRODUCT_SERVICE_URL || 'http://localhost:6002'));
+//app.use('/seller', proxy(process.env.SELLER_SERVICE_URL || 'http://localhost:6003'));
+app.use('/order', proxy(process.env.ORDER_SERVICE_URL || 'http://localhost:6004'));
+app.use('/chat', proxy(process.env.CHAT_SERVICE_URL || 'http://localhost:6005'));
 
-app.use('/', proxy('http://localhost:6001'));
+app.use('/', proxy(process.env.AUTH_SERVICE_URL || 'http://localhost:6001'));
 
 const port = process.env.PORT || 8080;
 const server = app.listen(port, () => {

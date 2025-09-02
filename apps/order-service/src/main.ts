@@ -8,9 +8,13 @@ import { createOrder } from './controller/order.controller';
 
 const app = express();
 
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
 app.use(
   cors({
-    origin: ['http://localhost:3000'],
+    origin: allowedOrigins,
     allowedHeaders: ['Authorization', 'Content-Type'],
     credentials: true,
   }),
