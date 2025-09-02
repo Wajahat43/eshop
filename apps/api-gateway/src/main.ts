@@ -2,6 +2,7 @@ import express from 'express';
 import * as path from 'path';
 import cors from 'cors';
 import proxy from 'express-http-proxy';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
@@ -11,7 +12,18 @@ const app = express();
 
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: (origin, callback) => {
+      const allowedOriginsEnv = process.env.CORS_ORIGINS || '';
+      const allowedOrigins = allowedOriginsEnv
+        ? allowedOriginsEnv.split(',').map((o) => o.trim())
+        : ['http://localhost:3000', 'http://localhost:3001'];
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     allowedHeaders: ['Authorization', 'Content-Type'],
     credentials: true,
   }),
@@ -44,7 +56,16 @@ app.get('/gateway-health', (req, res) => {
 app.use('/product', proxy('http://localhost:6002'));
 //app.use('/seller', proxy('http://localhost:6003'));
 app.use('/order', proxy('http://localhost:6004'));
-app.use('/chat', proxy('http://localhost:6005'));
+
+// WebSocket proxy for chat-service
+app.use(
+  '/chat',
+  createProxyMiddleware({
+    target: 'http://localhost:6005',
+    changeOrigin: true,
+    ws: true,
+  }),
+);
 
 app.use('/', proxy('http://localhost:6001'));
 
