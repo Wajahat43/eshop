@@ -1,0 +1,118 @@
+envVarGroups:
+  - name: eshop-shared-vars
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_SERVICE_URL
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+      - key: CHAT_SERVICE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: KAFKA_BROKER_URL
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+
+services:
+  # API Gateway
+  - type: web
+    name: eshop-api-gateway
+    env: node
+    plan: free
+    buildCommand: npm install && npx nx build api-gateway
+    startCommand: npx nx serve api-gateway --configuration=production
+    envVars:
+      - fromGroup: eshop-shared-vars
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+
+  # Auth Service
+  - type: web
+    name: eshop-auth-service
+    env: node
+    plan: free
+    buildCommand: npm install && npx nx build auth-service
+    startCommand: npx nx serve auth-service --configuration=production
+    envVars:
+      - fromGroup: eshop-shared-vars
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 6001
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: 587
+
+  # Product Service
+  - type: web
+    name: eshop-product-service
+    env: node
+    plan: free
+    buildCommand: npm install && npx nx build product-service
+    startCommand: npx nx serve product-service --configuration=production
+    envVars:
+      - fromGroup: eshop-shared-vars
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 6002
+
+  # Order Service
+  - type: web
+    name: eshop-order-service
+    env: node
+    plan: free
+    buildCommand: npm install && npx nx build order-service
+    startCommand: npx nx serve order-service --configuration=production
+    envVars:
+      - fromGroup: eshop-shared-vars
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 6004
+
+  # Chat Service
+  - type: web
+    name: eshop-chat-service
+    env: node
+    plan: free
+    buildCommand: npm install && npx nx build chat-service
+    startCommand: npx nx serve chat-service --configuration=production
+    envVars:
+      - fromGroup: eshop-shared-vars
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 6005
+
+  # Kafka Service (Analytics)
+  - type: web
+    name: eshop-kafka-service
+    env: node
+    plan: free
+    buildCommand: npm install && npx nx build kafka-service
+    startCommand: npx nx serve kafka-service --configuration=production
+    envVars:
+      - fromGroup: eshop-shared-vars
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 6006
