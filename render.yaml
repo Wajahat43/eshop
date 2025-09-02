@@ -1,6 +1,8 @@
 envVarGroups:
   - name: eshop-shared-vars
     envVars:
+      - key: NPM_CONFIG_PRODUCTION
+        value: 'false'
       - key: DATABASE_URL
         sync: false
       - key: AUTH_SERVICE_URL
