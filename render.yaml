@@ -30,7 +30,7 @@ services:
     name: eshop-api-gateway
     env: node
     plan: free
-    buildCommand: npm install && npx nx build api-gateway
+    buildCommand: npm install --legacy-peer-deps --no-audit && npx nx build api-gateway
     startCommand: npx nx serve api-gateway --configuration=production
     envVars:
       - fromGroup: eshop-shared-vars
@@ -44,7 +44,7 @@ services:
     name: eshop-auth-service
     env: node
     plan: free
-    buildCommand: npm install && npx nx build auth-service
+    buildCommand: npm install --legacy-peer-deps --no-audit && npx nx build auth-service
     startCommand: npx nx serve auth-service --configuration=production
     envVars:
       - fromGroup: eshop-shared-vars
@@ -66,7 +66,7 @@ services:
     name: eshop-product-service
     env: node
     plan: free
-    buildCommand: npm install && npx nx build product-service
+    buildCommand: npm install --legacy-peer-deps --no-audit && npx nx build product-service
     startCommand: npx nx serve product-service --configuration=production
     envVars:
       - fromGroup: eshop-shared-vars
@@ -80,7 +80,7 @@ services:
     name: eshop-order-service
     env: node
     plan: free
-    buildCommand: npm install && npx nx build order-service
+    buildCommand: npm install --legacy-peer-deps --no-audit && npx nx build order-service
     startCommand: npx nx serve order-service --configuration=production
     envVars:
       - fromGroup: eshop-shared-vars
@@ -94,7 +94,7 @@ services:
     name: eshop-chat-service
     env: node
     plan: free
-    buildCommand: npm install && npx nx build chat-service
+    buildCommand: npm install --legacy-peer-deps --no-audit && npx nx build chat-service
     startCommand: npx nx serve chat-service --configuration=production
     envVars:
       - fromGroup: eshop-shared-vars
@@ -108,7 +108,7 @@ services:
     name: eshop-kafka-service
     env: node
     plan: free
-    buildCommand: npm install && npx nx build kafka-service
+    buildCommand: npm install --legacy-peer-deps --no-audit && npx nx build kafka-service
     startCommand: npx nx serve kafka-service --configuration=production
     envVars:
       - fromGroup: eshop-shared-vars
