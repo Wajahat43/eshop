@@ -6,8 +6,6 @@ services:
     plan: free
     envVars:
       - fromGroup: eshop-shared-vars
-      - key: PORT
-        value: 8080
       - key: NODE_ENV
         value: production
     buildFilter:

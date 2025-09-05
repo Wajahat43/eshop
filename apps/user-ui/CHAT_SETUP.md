@@ -6,7 +6,7 @@ Create a `.env.local` file in the `apps/user-ui` directory with the following:
 
 ```bash
 # Chat Service Configuration
-NEXT_PUBLIC_CHAT_WEBSOCKET_URI=ws://localhost:6005
+NEXT_PUBLIC_CHAT_WEBSOCKET_URI=ws://localhost:8080/chat
 ```
 
 ## Features Implemented

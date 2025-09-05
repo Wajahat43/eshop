@@ -1,8 +1,10 @@
-import express from 'express';
+import express, { Request } from 'express';
 import * as path from 'path';
 import cors from 'cors';
 import proxy from 'express-http-proxy';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import httpProxy from 'http-proxy';
+import { IncomingMessage } from 'http';
+import { Socket } from 'net';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
@@ -37,11 +39,11 @@ app.set('trust proxy', 1);
 //Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: (req: any) => (req.user ? 1000 : 1000), // Limit each IP to
+  max: () => 1000, // Limit each IP to
   message: { error: 'Too many requests. Please try again later' },
   standardHeaders: true,
   legacyHeaders: true,
-  keyGenerator: (req: any) => req.ip,
+  keyGenerator: (req: Request) => req.ip || 'unknown',
 });
 
 app.use(limiter);
@@ -57,15 +59,8 @@ app.use('/product', proxy('http://localhost:6002'));
 //app.use('/seller', proxy('http://localhost:6003'));
 app.use('/order', proxy('http://localhost:6004'));
 
-// WebSocket proxy for chat-service
-app.use(
-  '/chat',
-  createProxyMiddleware({
-    target: 'http://localhost:6005',
-    changeOrigin: true,
-    ws: true,
-  }),
-);
+// Chat HTTP under /chat -> forwards to chat-service /api
+app.use('/chat', proxy('http://localhost:6005'));
 
 app.use('/', proxy('http://localhost:6001'));
 
@@ -78,6 +73,20 @@ const server = app.listen(port, () => {
     console.log('Site config initialized');
   } catch (error) {
     console.error('Error initializing site config:', error);
+  }
+});
+
+// WS endpoint at /chat-ws -> forwards to chat-service WS root
+const wsProxy = httpProxy.createProxyServer({
+  target: 'ws://localhost:6005',
+  changeOrigin: true,
+  ws: true,
+});
+
+server.on('upgrade', (req: IncomingMessage, socket: Socket, head: Buffer) => {
+  if (req.url && req.url.startsWith('/chat-ws')) {
+    req.url = req.url.replace(/^\/chat-ws/, '');
+    wsProxy.ws(req, socket, head);
   }
 });
 server.on('error', console.error);
