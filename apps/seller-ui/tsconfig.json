@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "packages/*": ["../../packages/*"],
+      "@packages/*": ["../../packages/*"]
     },
     "outDir": "dist",
     "rootDir": "../../",
@@ -34,8 +36,9 @@
     "src/**/*.jsx",
     "src/**/*.ts",
     "src/**/*.tsx",
-    ".next/types/**/*.ts"
-, "../../packages/libs/imageKit/index.ts"  ],
+    ".next/types/**/*.ts",
+    "../../packages/libs/imageKit/index.ts"
+  ],
   "exclude": [
     "out-tsc",
     "dist",

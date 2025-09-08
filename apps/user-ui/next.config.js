@@ -23,6 +23,9 @@ const nextConfig = {
     NEXT_PUBLIC_CHAT_WEBSOCKET_URI:
       process.env.NEXT_PUBLIC_CHAT_WEBSOCKET_URI || 'wss://your-render-app.onrender.com/chat',
   },
+  experimental: {
+    externalDir: true,
+  },
 };
 
 const plugins = [
