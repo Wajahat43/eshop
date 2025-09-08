@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/user-ui/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
+    },
+    {
+      "src": "apps/seller-ui/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/user-ui/(.*)",
+      "dest": "/apps/user-ui/$1"
+    },
+    {
+      "src": "/seller-ui/(.*)",
+      "dest": "/apps/seller-ui/$1"
+    }
+  ]
+}

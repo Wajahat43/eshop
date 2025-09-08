@@ -1,6 +1,5 @@
 //@ts-check
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { composePlugins, withNx } = require('@nx/next');
 
 /**
@@ -18,6 +17,11 @@ const nextConfig = {
         hostname: 'ik.imagekit.io',
       },
     ],
+  },
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://your-render-app.onrender.com',
+    NEXT_PUBLIC_CHAT_WEBSOCKET_URI:
+      process.env.NEXT_PUBLIC_CHAT_WEBSOCKET_URI || 'wss://your-render-app.onrender.com/chat',
   },
 };
 

@@ -50,7 +50,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ user, chil
   useEffect(() => {
     if (!user?.id) return;
 
-    const wsUri = process.env.NEXT_PUBLIC_CHAT_WEBSOCKET_URI || 'ws://localhost:8080/chat';
+    const wsUri = process.env.NEXT_PUBLIC_CHAT_WEBSOCKET_URI || 'wss://your-render-app.onrender.com/chat';
 
     setIsConnecting(true);
     setError(null);
