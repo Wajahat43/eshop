@@ -1,6 +1,7 @@
 //@ts-check
+const path = require('path');
 
-const { composePlugins, withNx } = require('@nx/next');
+// Removed Nx plugin usage for Vercel build
 
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
@@ -26,11 +27,15 @@ const nextConfig = {
   experimental: {
     externalDir: true,
   },
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      packages: path.resolve(__dirname, '../../packages'),
+      '@packages': path.resolve(__dirname, '../../packages'),
+    };
+    return config;
+  },
 };
 
-const plugins = [
-  // Add more Next.js plugins to this list if needed.
-  withNx,
-];
-
-module.exports = composePlugins(...plugins)(nextConfig);
+module.exports = nextConfig;
