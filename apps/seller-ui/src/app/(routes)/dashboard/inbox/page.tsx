@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useWebSocket } from 'apps/seller-ui/src/context/websocket-context';
 import { useConversations } from 'apps/seller-ui/src/hooks/chat';
 import { ChatHeader, ChatWindow, ConversationList, EmptyChatState } from 'apps/seller-ui/src/shared/organisms';
 
-const InboxPage: React.FC = () => {
+const InboxPageInner: React.FC = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
@@ -104,6 +104,14 @@ const InboxPage: React.FC = () => {
       {/* Mobile Responsive Overlay */}
       <div className="lg:hidden">{/* Mobile conversation list overlay would go here */}</div>
     </div>
+  );
+};
+
+const InboxPage: React.FC = () => {
+  return (
+    <Suspense fallback={<div />}>
+      <InboxPageInner />
+    </Suspense>
   );
 };
 

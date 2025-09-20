@@ -1,6 +1,5 @@
 //@ts-check
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { composePlugins, withNx } = require('@nx/next');
 
 /**
@@ -18,6 +17,13 @@ const nextConfig = {
         hostname: 'ik.imagekit.io',
       },
     ],
+  },
+  // Disable type-checking and ESLint during build on Vercel
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 

@@ -1,6 +1,19 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
-import ReactQuill from 'react-quill-new';
+import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), {
+  ssr: false,
+  loading: () => (
+    <div className="rich-text-editor-wrapper">
+      <div className="quill-editor">
+        <div style={{ minHeight: 150 }} />
+      </div>
+    </div>
+  ),
+});
 
 interface RichTextEditorProps {
   value: string;
