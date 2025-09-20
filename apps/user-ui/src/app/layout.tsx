@@ -4,6 +4,7 @@ import { DarkModeToggle } from '../components/ui/DarkModeToggle';
 import { Poppins, Roboto } from 'next/font/google';
 import Providers from './Providers';
 import { ThemeScript } from './theme-script';
+import SuspenseWrapper from './SuspenseWrapper';
 
 export const metadata = {
   title: 'NextCart',
@@ -31,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeScript />
         <Providers>
           <Header />
-          {children}
+          <SuspenseWrapper>{children}</SuspenseWrapper>
           <DarkModeToggle />
         </Providers>
       </body>
