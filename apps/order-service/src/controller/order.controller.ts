@@ -37,7 +37,7 @@ interface VerifySessionRequest extends Request {
   };
 }
 
-interface WebhookRequest extends Request {
+export interface WebhookRequest extends Request {
   headers: {
     'stripe-signature': string;
   };

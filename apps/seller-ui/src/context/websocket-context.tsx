@@ -49,7 +49,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ seller, ch
   useEffect(() => {
     if (!seller?.id) return;
 
-    const wsUri = process.env.NEXT_PUBLIC_CHAT_WEBSOCKET_URI || 'ws://localhost:6005';
+    const wsUri = process.env.NEXT_PUBLIC_CHAT_WEBSOCKET_URI || 'ws://localhost:8080/chat';
 
     setIsConnecting(true);
     setError(null);

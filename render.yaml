@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: eshop-monolith
+    env: docker
+    autoDeploy: true
+    plan: free
+    envVars:
+      - fromGroup: eshop-shared-vars
+      - key: NODE_ENV
+        value: production
+    buildFilter:
+      paths:
+        - apps/**
+        - packages/**
+        - prisma/**
+        - Dockerfile
+        - ecosystem.config.js

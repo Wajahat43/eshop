@@ -1,10 +1,29 @@
 import express from 'express';
+import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { startConsumer } from './chat-message.consumer';
 import { createWebSocketServer } from './websocket';
 import chatRoutes from './routes/chat.routes';
 
 const app = express();
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowedOriginsEnv = process.env.CORS_ORIGINS || '';
+      const allowedOrigins = allowedOriginsEnv
+        ? allowedOriginsEnv.split(',').map((o) => o.trim())
+        : ['http://localhost:3000'];
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    allowedHeaders: ['Authorization', 'Content-Type'],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(cookieParser());
 

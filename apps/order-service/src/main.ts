@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
+import { Request, Response, NextFunction } from 'express';
 import { errorMiddleware } from '@packages/error-handler/error-middleware';
 import orderRouter from './routes/order.route';
 import { createOrder } from './controller/order.controller';
@@ -10,7 +11,18 @@ const app = express();
 
 app.use(
   cors({
-    origin: ['http://localhost:3000'],
+    origin: (origin, callback) => {
+      const allowedOriginsEnv = process.env.CORS_ORIGINS || '';
+      const allowedOrigins = allowedOriginsEnv
+        ? allowedOriginsEnv.split(',').map((o) => o.trim())
+        : ['http://localhost:3000'];
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     allowedHeaders: ['Authorization', 'Content-Type'],
     credentials: true,
   }),
@@ -20,11 +32,12 @@ app.use(
 app.post(
   '/api/create-order',
   bodyParser.raw({ type: 'application/json' }),
-  (req, res, next) => {
+  (req: Request, res: Response, next: NextFunction) => {
     (req as any).rawBody = req.body;
     next();
   },
-  createOrder,
+
+  (req: Request, res: Response, next: NextFunction) => createOrder(req as any, res, next),
 );
 
 app.use(express.json({ limit: '200mb' }));
