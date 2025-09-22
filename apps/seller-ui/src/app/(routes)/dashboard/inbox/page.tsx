@@ -59,7 +59,7 @@ const InboxPageInner: React.FC = () => {
   const selectedConversation = conversations.find((conv) => conv.id === selectedConversationId);
 
   return (
-    <div className="h-screen bg-background">
+    <div className="h-screen bg-background w-full">
       {/* Header */}
       <div className="h-16 border-b border-border bg-card flex items-center px-6">
         <h1 className="text-2xl font-bold text-foreground">Customer Inbox</h1>

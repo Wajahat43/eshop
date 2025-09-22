@@ -1,17 +1,15 @@
 'use client';
 
 import React from 'react';
-import { AlignLeft, ChevronDown } from 'lucide-react';
 import { navItems } from 'apps/user-ui/src/configs/constants';
 import Link from 'next/link';
 import ActionItems from './action-items';
 import { twMerge } from 'tailwind-merge';
 
 const HeaderBottom = () => {
-  const [show, setShow] = React.useState(false);
   const [isSticky, setIsSticky] = React.useState(false);
   const scrollThreshold = 100;
-  const buffer = 20; // Buffer to prevent flickering around threshold
+  const buffer = 1; // Buffer to prevent flickering around threshold
 
   //Track scroll position with throttling
   const handleScroll = React.useCallback(() => {
@@ -63,40 +61,19 @@ const HeaderBottom = () => {
       className={twMerge(
         'w-full transition-all duration-300 ease-out',
         isSticky
-          ? 'fixed top-0 left-0 z-[100] h-20 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-lg'
+          ? 'fixed top-0 left-0 z-[100] h-20 bg-background/80 backdrop-blur-md border-b border-border/60 shadow-lg'
           : 'relative',
       )}
     >
-      <div className={twMerge('w-[80%] relative m-auto flex items-center justify-between', isSticky ? 'pt-3' : 'pt-0')}>
-        {/**All Dropdowns */}
-        <div
-          className={twMerge(
-            'w-[260px] cursor-pointer flex items-center justify-between px-5 h-[50px] bg-primary transition-all duration-300',
-            isSticky && '-mb-2',
-          )}
-          onClick={() => setShow(!show)}
-        >
-          <div className="flex items-center gap-2">
-            <AlignLeft />
-            <span className="text-foreground font-medium">All Departments </span>
-          </div>
-          <ChevronDown />
-        </div>
-
-        {/**Dropdown menu */}
-        {show && (
-          <div
-            className={twMerge(
-              'absolute left-0 min-w-[260px] min-h-[400px] bg-muted/95 backdrop-blur-md text-muted-foreground border border-border/50 shadow-xl transition-all duration-300',
-              isSticky ? 'top-[70px]' : 'top-[50px]',
-            )}
-          />
-        )}
-
+      <div className={twMerge('relative m-auto flex w-[80%] items-center justify-between', isSticky ? 'pt-3' : 'pt-0')}>
         {/** Navigation Links */}
-        <div className="flex gap-8 items-center">
+        <div className="flex items-center gap-6">
           {navItems.map((item, index) => (
-            <Link className="px-2 font-medium text-lg" key={index} href={item.href}>
+            <Link
+              className="px-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+              key={index}
+              href={item.href}
+            >
               {item.title}
             </Link>
           ))}

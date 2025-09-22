@@ -1,4 +1,5 @@
 export { default as Hero } from './homepage/hero';
+export { default as FaqSection } from './homepage/faqs';
 export { default as LatestEvents } from './latest-events';
 export { default as LatestProducts } from './latest-products';
 export { default as Pagination } from './pagination';
