@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Trash, Plus, Minus } from 'lucide-react';
+import { Trash, Plus, Minus, Loader2 } from 'lucide-react';
 import { useStore } from 'apps/user-ui/src/store';
 import useUser from 'apps/user-ui/src/hooks/userUser';
 import useLocationTracking from 'apps/user-ui/src/hooks/useLocationTracking';
@@ -12,8 +12,26 @@ import useDeviceTracking from 'apps/user-ui/src/hooks/useDeviceTracking';
 import useProducts from 'apps/user-ui/src/hooks/useProducts';
 import { useUserAddresses } from 'apps/user-ui/src/hooks/useUserAddresses';
 import usePaymentSession from 'apps/user-ui/src/hooks/usePaymentSession';
+import ProtectedRoute from '../../../shared/components/guards/protected-route';
 
 const CartPage = () => {
+  return (
+    <ProtectedRoute fallback={<CartLoadingFallback />}>
+      <CartScreen />
+    </ProtectedRoute>
+  );
+};
+
+const CartLoadingFallback = () => (
+  <div className="flex min-h-[60vh] items-center justify-center">
+    <div className="flex flex-col items-center gap-3" role="status">
+      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <span className="text-sm font-medium text-muted-foreground">Loading your cart…</span>
+    </div>
+  </div>
+);
+
+const CartScreen = () => {
   const { cart, removeFromCart, setCartQuantity } = useStore();
   const { user } = useUser();
   const location = useLocationTracking();
@@ -27,7 +45,6 @@ const CartPage = () => {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('online');
 
-  // Auto-select default address when addresses load
   React.useEffect(() => {
     if (addresses.length > 0 && !selectedAddressId) {
       const defaultAddress = addresses.find((addr) => addr.isDefault);
@@ -153,7 +170,14 @@ const CartPage = () => {
   const total = subtotal; // For now, total is the same as subtotal
 
   if (getProductsQuery.isLoading) {
-    return <div>Loading...</div>; // Or a spinner
+    return (
+      <div className="flex min-h-[60vh] w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-3" role="status">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <span className="text-sm font-medium text-muted-foreground">Loading your cart…</span>
+        </div>
+      </div>
+    );
   }
 
   if (cart.length === 0) {

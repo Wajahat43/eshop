@@ -16,6 +16,10 @@ export const navItems: NavItemsTypes[] = [
     href: '/offers',
   },
   {
+    title: 'Inbox',
+    href: '/inbox',
+  },
+  {
     title: 'Become Seller',
     href: '/seller',
   },

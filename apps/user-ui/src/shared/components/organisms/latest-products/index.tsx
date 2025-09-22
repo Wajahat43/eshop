@@ -11,7 +11,7 @@ const LatestProducts = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {Array.from({ length: 12 }).map((_, index) => (
           <div key={index} className="h-[250px] bg-muted animate-pulse rounded" />
         ))}
@@ -63,7 +63,7 @@ const LatestProducts = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
       {products.map((product: any) => (
         <ProductCard key={product.id} product={product} />
       ))}

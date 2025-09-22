@@ -11,10 +11,12 @@ let refreshSubscribers: (() => void)[] = [];
 
 const handleLogout = () => {
   const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password'];
-  const currentPath = window.location.pathname;
+  const { pathname, search } = window.location;
+  const currentPath = pathname;
+  const pathWithSearch = `${pathname}${search}`;
 
-  if (!publicPaths.includes(currentPath)) {
-    runRedirectToLogin();
+  if (!publicPaths.some((path) => currentPath.startsWith(path))) {
+    runRedirectToLogin(pathWithSearch);
   }
 };
 

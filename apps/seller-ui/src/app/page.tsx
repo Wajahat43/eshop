@@ -5,6 +5,7 @@ import useProduct from '../hooks/useProduct';
 import { useOrders } from '../hooks/useOrders';
 import { useDiscountCodes } from '../hooks/useDiscountCodes';
 import Link from 'next/link';
+import { MessageCircle } from 'lucide-react';
 import {
   SellerHomeEventsSection,
   SellerHomeHeader,
@@ -86,6 +87,25 @@ const HomePage = () => {
             activeOffers={offers.length}
             eventsCount={events.length}
           />
+
+          {/* Inbox Button */}
+          <div className="rounded-xl border border-border bg-card text-card-foreground shadow p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <MessageCircle className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Customer Messages</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Chat with customers, answer questions, and provide support for your products.
+            </p>
+            <Link
+              href="/inbox"
+              className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-95 transition-opacity"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Open Inbox
+            </Link>
+          </div>
+
           <SellerHomeOffersSection offers={offers} />
           <SellerHomeEventsSection events={events} />
         </div>

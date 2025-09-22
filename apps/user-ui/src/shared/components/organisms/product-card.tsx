@@ -57,8 +57,6 @@ const ProductCard = ({ product, isEvent = false }: ProductCardProps) => {
     return () => clearInterval(interval);
   }, []);
 
-  console.log('Product component rendered');
-
   return (
     <>
       <div className="group w-full min-h-[350px] h-max bg-card rounded-lg relative border border-border shadow-sm hover:shadow-lg transition-all duration-300 ease-in-out hover:scale-102 overflow-hidden">

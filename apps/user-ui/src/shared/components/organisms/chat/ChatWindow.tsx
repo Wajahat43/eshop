@@ -148,9 +148,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, seller }) => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-w-0 min-h-0">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 min-w-0">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
@@ -182,22 +182,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, seller }) => {
 
       {/* Connection Status */}
       {isConnecting && (
-        <div className="px-4 py-2 bg-yellow-500/10 border-t border-yellow-500/20">
+        <div className="px-4 py-2 bg-yellow-500/10 border-t border-yellow-500/20 flex-shrink-0">
           <p className="text-xs text-yellow-600 text-center">Connecting to chat server...</p>
         </div>
       )}
       {!isConnected && !isConnecting && wsError && (
-        <div className="px-4 py-2 bg-red-500/10 border-t border-red-500/20">
+        <div className="px-4 py-2 bg-red-500/10 border-t border-red-500/20 flex-shrink-0">
           <p className="text-xs text-red-600 text-center">Connection failed: {wsError}</p>
         </div>
       )}
 
       {/* Chat Input */}
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        disabled={!isConnected || isSending}
-        placeholder={isSending ? 'Sending...' : 'Type a message...'}
-      />
+      <div className="flex-shrink-0">
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          disabled={!isConnected || isSending}
+          placeholder={isSending ? 'Sending...' : 'Type a message...'}
+        />
+      </div>
     </div>
   );
 };

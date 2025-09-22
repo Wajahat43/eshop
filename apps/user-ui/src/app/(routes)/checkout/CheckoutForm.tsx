@@ -2,24 +2,37 @@
 
 import React, { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import useCheckout from 'apps/user-ui/src/hooks/useCheckout';
 
 interface CheckoutFormProps {
   sessionData: any;
   sessionId: string;
+  createPaymentIntent: (sellerData: any) => Promise<any>;
+  isCreatingPaymentIntent: boolean;
+  paymentIntentError: unknown;
 }
 
-const CheckoutForm: React.FC<CheckoutFormProps> = ({ sessionData, sessionId }) => {
+const CheckoutForm: React.FC<CheckoutFormProps> = ({
+  sessionData,
+  sessionId,
+  createPaymentIntent,
+  isCreatingPaymentIntent,
+  paymentIntentError,
+}) => {
   const stripe = useStripe();
   const elements = useElements();
-  const { createPaymentIntent, isCreatingPaymentIntent, paymentIntentError } = useCheckout();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentIntents, setPaymentIntents] = useState<any[]>([]);
+  const externalErrorMessage =
+    paymentIntentError instanceof Error
+      ? paymentIntentError.message
+      : typeof paymentIntentError === 'string'
+      ? paymentIntentError
+      : null;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    event.stopPropagation();
 
     if (!stripe || !elements) {
       return;
@@ -54,8 +67,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ sessionData, sessionId }) =
           }
         }
       }
-
-      setPaymentIntents(createdPaymentIntents);
 
       if (createdPaymentIntents.length === 0) {
         throw new Error('Failed to create payment intents');
@@ -120,9 +131,9 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ sessionData, sessionId }) =
       </div>
 
       {/* Error Display */}
-      {(error || paymentIntentError) && (
+      {(error || externalErrorMessage) && (
         <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-          <p className="text-sm text-destructive">{error || paymentIntentError?.message || 'An error occurred'}</p>
+          <p className="text-sm text-destructive">{error || externalErrorMessage || 'An error occurred'}</p>
         </div>
       )}
 

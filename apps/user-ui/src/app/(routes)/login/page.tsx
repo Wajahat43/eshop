@@ -1,6 +1,6 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
 import GoogleButton from 'apps/user-ui/src/shared/components/GoogleButton';
@@ -14,12 +14,37 @@ type FormData = {
   email: string;
   password: string;
 };
+
+const getSafeRedirect = (value: string | null) => {
+  if (!value) {
+    return '/';
+  }
+
+  try {
+    const decoded = decodeURIComponent(value);
+    const trimmed = decoded.trim();
+
+    if (!trimmed.startsWith('/') || trimmed.startsWith('//')) {
+      return '/';
+    }
+
+    return trimmed === '/login' ? '/' : trimmed;
+  } catch (error) {
+    return '/';
+  }
+};
+
 const page = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+
+  const redirectParam = searchParams.get('redirect');
+  const redirectTarget = useMemo(() => getSafeRedirect(redirectParam), [redirectParam]);
+  const redirectLabel = redirectTarget !== '/' ? redirectTarget : null;
 
   const {
     register,
@@ -38,7 +63,8 @@ const page = () => {
     onSuccess: () => {
       setServerError(null);
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      router.push('/');
+      router.replace(redirectTarget || '/');
+      router.refresh();
     },
 
     onError: (error: AxiosError) => {
@@ -62,6 +88,11 @@ const page = () => {
               Sign up
             </Link>
           </p>
+          {redirectLabel && (
+            <p className="mb-4 rounded-md border border-primary/20 bg-primary/10 px-4 py-2 text-center text-xs font-medium text-primary">
+              You&apos;ll head back to <span className="font-semibold">{redirectLabel}</span> after logging in.
+            </p>
+          )}
 
           <GoogleButton onClick={() => {}} className="align-center" />
 

@@ -1,4 +1,4 @@
-import express, { Request } from 'express';
+import express, { Request, Response } from 'express';
 import * as path from 'path';
 import cors from 'cors';
 import proxy from 'express-http-proxy';
@@ -11,6 +11,43 @@ import cookieParser from 'cookie-parser';
 import initializeSiteConfig from './libs/initializeSiteConfig';
 
 const app = express();
+
+const createProxyErrorHandler = (serviceName: string) =>
+  (err: unknown, res: Response, next: (err?: unknown) => void) => {
+    console.error(`Proxy error for ${serviceName}:`, err);
+
+    const unwrapError = (error: unknown): NodeJS.ErrnoException | undefined => {
+      if (
+        error instanceof AggregateError &&
+        Array.isArray(error.errors) &&
+        error.errors.length > 0
+      ) {
+        return unwrapError(error.errors[0]);
+      }
+
+      return error as NodeJS.ErrnoException | undefined;
+    };
+
+    const underlyingError = unwrapError(err);
+    const errorCode = underlyingError?.code;
+    const shouldReturnServiceUnavailable =
+      errorCode === 'ECONNREFUSED' || errorCode === 'EHOSTUNREACH' || errorCode === 'ETIMEDOUT';
+
+    if (res.headersSent) {
+      return next(err);
+    }
+
+    if (shouldReturnServiceUnavailable) {
+      res.status(503).json({ error: `${serviceName} service is unavailable` });
+    } else {
+      res.status(500).json({ error: `Unexpected error while contacting ${serviceName}` });
+    }
+  };
+
+const createServiceProxy = (target: string, serviceName: string) =>
+  proxy(target, {
+    proxyErrorHandler: createProxyErrorHandler(serviceName),
+  });
 
 app.use(
   cors({
@@ -55,14 +92,14 @@ app.get('/gateway-health', (req, res) => {
 });
 
 // Specific routes must come before the catch-all route
-app.use('/product', proxy('http://localhost:6002'));
-//app.use('/seller', proxy('http://localhost:6003'));
-app.use('/order', proxy('http://localhost:6004'));
+app.use('/product', createServiceProxy('http://127.0.0.1:6002', 'product'));
+//app.use('/seller', createServiceProxy('http://127.0.0.1:6003', 'seller'));
+app.use('/order', createServiceProxy('http://127.0.0.1:6004', 'order'));
 
 // Chat HTTP under /chat -> forwards to chat-service /api
-app.use('/chat', proxy('http://localhost:6005'));
+app.use('/chat', createServiceProxy('http://127.0.0.1:6005', 'chat'));
 
-app.use('/', proxy('http://localhost:6001'));
+app.use('/', createServiceProxy('http://127.0.0.1:6001', 'user-ui'));
 
 const port = process.env.PORT || 8080;
 const server = app.listen(port, () => {
@@ -78,9 +115,17 @@ const server = app.listen(port, () => {
 
 // WS endpoint at /chat-ws -> forwards to chat-service WS root
 const wsProxy = httpProxy.createProxyServer({
-  target: 'ws://localhost:6005',
+  target: 'ws://127.0.0.1:6005',
   changeOrigin: true,
   ws: true,
+});
+
+wsProxy.on('error', (err, req, socket) => {
+  console.error('WebSocket proxy error for chat service:', err);
+
+  if (socket instanceof Socket && !socket.destroyed) {
+    socket.end();
+  }
 });
 
 server.on('upgrade', (req: IncomingMessage, socket: Socket, head: Buffer) => {

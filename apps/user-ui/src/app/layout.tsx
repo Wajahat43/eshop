@@ -1,4 +1,5 @@
 import Header from '../shared/widgets/header';
+import { Footer } from '../shared/widgets/footer';
 import './global.css';
 import { DarkModeToggle } from '../components/ui/DarkModeToggle';
 import { Poppins, Roboto } from 'next/font/google';
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Header />
           <SuspenseWrapper>{children}</SuspenseWrapper>
+          <Footer />
           <DarkModeToggle />
         </Providers>
       </body>

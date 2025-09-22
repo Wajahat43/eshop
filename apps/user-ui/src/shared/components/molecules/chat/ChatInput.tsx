@@ -48,8 +48,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const canSend = !isMessageEmpty && !disabled;
 
   return (
-    <div className="flex items-end gap-3 p-4 bg-card border-t border-border">
-      <div className="flex-1 relative">
+    <div className="flex items-end gap-3 p-4 bg-card border-t border-border flex-shrink-0 min-w-0">
+      <div className="flex-1 relative min-w-0">
         <textarea
           ref={textareaRef}
           value={message}
@@ -62,6 +62,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             'focus:outline-none focus:ring-2 focus:ring-ring focus:border-input',
             'transition-all duration-200 min-h-[44px] max-h-[120px]',
             'disabled:opacity-50 disabled:cursor-not-allowed',
+            'overflow-y-auto',
           )}
           rows={1}
         />
@@ -71,7 +72,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         onClick={handleSend}
         disabled={!canSend}
         className={twMerge(
-          'flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200',
+          'flex items-center justify-center w-12 h-12 rounded-full transition-all duration-200 flex-shrink-0',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           canSend
             ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 shadow-md'
