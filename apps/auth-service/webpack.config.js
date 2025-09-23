@@ -17,7 +17,14 @@ module.exports = {
       compiler: 'tsc',
       main: './src/main.ts',
       tsConfig: './tsconfig.app.json',
-      assets: ['apps/auth-service/src/assets'], // Changed from './src/assets' to 'apps/auth-service/src/assets'
+      assets: [
+        'apps/auth-service/src/assets',
+        {
+          input: 'apps/auth-service/src/utils/email-templates',
+          glob: '**/*',
+          output: 'email-templates',
+        },
+      ], // ensure email templates ship with the build output
       optimization: false,
       outputHashing: 'none',
       generatePackageJson: true,
