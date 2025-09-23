@@ -178,7 +178,8 @@ export const createPaymentIntent = async (req: CreatePaymentIntentRequest, res: 
     // Calculate amounts
     const customerAmount = Math.round(amount * 100);
 
-    // Create payment intent
+    // Create payment intent this gives error of not being able to create payment intent on behalf of the seller
+    // because of different regions.
     // const paymentIntent = await stripe.paymentIntents.create({
     //   amount: customerAmount,
     //   currency: 'usd',
@@ -351,28 +352,35 @@ export const createPaymentSession = async (req: CreatePaymentSessionRequest, res
   }
 };
 
-export const createOrder = async (req: WebhookRequest, res: Response, next: NextFunction) => {
+export const createOrder = async (request: WebhookRequest, response: Response, next: NextFunction) => {
   try {
-    const stripeSignature = req.headers['stripe-signature'];
-    const rawBody = req.rawBody;
-    if (!stripeSignature) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing stripe signature',
-      });
+    const signature = request.headers['stripe-signature'];
+
+    if (!signature) {
+      console.error('Stripe webhook received without signature header');
+      return response.status(400).send('Webhook Error: missing stripe-signature header');
     }
 
-    let event;
+    const rawBody = (request as any).rawBody ?? request.body;
+
+    if (!rawBody) {
+      console.error('Stripe webhook received without raw body');
+      return response.status(400).send('Webhook Error: missing raw body');
+    }
+
+    let event: Stripe.Event;
+
     try {
-      event = stripe.webhooks.constructEvent(rawBody, stripeSignature, process.env.STRIPE_WEBHOOK_SECRET as string);
+      event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET as string);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Webhook signature verification failed:', errorMessage);
-      return res.status(400).send(`Webhook Error: ${errorMessage}`);
+      console.error('Stripe webhook signature verification failed:', errorMessage);
+      return response.status(400).send(`Webhook Error: ${errorMessage}`);
     }
 
     if (event.type !== 'payment_intent.succeeded') {
-      return res.status(200).json({ received: true });
+      console.log(`Ignoring Stripe event ${event.type}`);
+      return response.status(200).json({ received: true });
     }
 
     const paymentIntent = event.data.object as Stripe.PaymentIntent;
@@ -380,56 +388,55 @@ export const createOrder = async (req: WebhookRequest, res: Response, next: Next
     const userId = paymentIntent.metadata.userId;
 
     if (!sessionId || !userId) {
-      console.error('Missing sessionId or userId in payment intent metadata');
-      return res.status(400).json({
+      console.error('Stripe payment intent missing sessionId or userId metadata', {
+        paymentIntentId: paymentIntent.id,
+        metadata: paymentIntent.metadata,
+      });
+      return response.status(400).json({
         success: false,
         message: 'Invalid payment intent metadata',
       });
     }
 
-    // Find the session using simplified retrieval
     const { sessionData, sessionKey } = await retrieveSessionData(sessionId);
 
     if (!sessionData || !sessionKey) {
-      console.error('Session not found for sessionId:', sessionId);
-      return res.status(404).json({
+      console.error('Payment session not found for sessionId:', sessionId);
+      return response.status(404).json({
         success: false,
         message: 'Session not found',
       });
     }
 
-    // Get user information
     const user = await prisma.users.findUnique({
       where: { id: userId },
       select: { name: true, email: true },
     });
 
     if (!user) {
-      console.error('User not found:', userId);
-      return res.status(404).json({
+      console.error('User not found while processing order', { userId });
+      return response.status(404).json({
         success: false,
         message: 'User not found',
       });
     }
 
     try {
-      // Process all orders using utility function
       await processOrdersForAllShops(sessionData, user);
 
-      // Clean up session data and cart mapping
       await redis?.del(sessionKey);
       await cleanupCartMapping(userId, sessionData.cart);
     } catch (orderError) {
-      console.error('Error processing orders:', orderError);
+      console.error('Error while processing orders from webhook:', orderError);
+      return next(orderError);
     }
 
-    res.status(200).json({ received: true });
-  } catch (error) {
-    console.error('Error in createOrder webhook:', error);
-    return next(error);
+    return response.status(200).json({ received: true });
+  } catch (outerError) {
+    console.error('Unexpected error in Stripe webhook handler:', outerError);
+    return next(outerError);
   }
 };
-
 /**
  * Get orders for the logged-in seller's shop
  */

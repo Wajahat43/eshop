@@ -1,0 +1,607 @@
+export const authInlineTemplates: Record<string, string> = {
+  'user-activation-mail': `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify Your Account</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 300;
+      }
+      .content {
+        padding: 40px 30px;
+        line-height: 1.6;
+      }
+      .welcome-text {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #555;
+      }
+      .otp-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        margin: 30px 0;
+        border-left: 4px solid #667eea;
+      }
+      .otp-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .otp-code {
+        font-size: 32px;
+        font-weight: bold;
+        color: #667eea;
+        letter-spacing: 8px;
+        margin: 15px 0;
+        font-family: 'Courier New', monospace;
+      }
+      .otp-expiry {
+        font-size: 12px;
+        color: #888;
+        margin-top: 10px;
+      }
+      .instructions {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 25px 0;
+      }
+      .instructions h3 {
+        margin-top: 0;
+        color: #856404;
+        font-size: 16px;
+      }
+      .instructions ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+      .instructions li {
+        margin: 5px 0;
+        color: #856404;
+      }
+      .footer {
+        background-color: #f8f9fa;
+        padding: 30px;
+        text-align: center;
+        border-top: 1px solid #dee2e6;
+      }
+      .footer p {
+        margin: 5px 0;
+        color: #666;
+        font-size: 14px;
+      }
+      .footer a {
+        color: #667eea;
+        text-decoration: none;
+      }
+      .footer a:hover {
+        text-decoration: underline;
+      }
+      .security-notice {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 20px 0;
+        font-size: 14px;
+        color: #0c5460;
+      }
+      .brand-logo {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      @media (max-width: 600px) {
+        .container {
+          margin: 0 10px;
+        }
+        .header,
+        .content,
+        .footer {
+          padding: 20px;
+        }
+        .otp-code {
+          font-size: 28px;
+          letter-spacing: 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="brand-logo">NextCart</div>
+        <h1>Welcome to Our Store!</h1>
+      </div>
+
+      <div class="content">
+        <p class="welcome-text">Hello <strong><%= name %></strong>,</p>
+
+        <p>
+          Thank you for signing up with NextCart! We're excited to have you join our community of savvy shoppers. To
+          complete your account setup and start exploring amazing deals, please verify your email address using the code
+          below.
+        </p>
+
+        <div class="otp-section">
+          <div class="otp-label">Your Verification Code</div>
+          <div class="otp-code"><%= otp %></div>
+          <div class="otp-expiry">This code expires in 10 minutes</div>
+        </div>
+
+        <div class="instructions">
+          <h3>How to verify your account:</h3>
+          <ul>
+            <li>Return to the signup page on our website</li>
+            <li>Enter the 6-digit code shown above</li>
+            <li>Click "Verify Account" to complete the process</li>
+          </ul>
+        </div>
+
+        <div class="security-notice">
+          <strong>Security Notice:</strong> This code is confidential and should not be shared with anyone. If you
+          didn't request this verification, please ignore this email or contact our support team.
+        </div>
+
+        <p>If you have any questions or need assistance, our customer support team is here to help 24/7.</p>
+      </div>
+
+      <div class="footer">
+        <p><strong>NextCart Customer Support</strong></p>
+        <p>Email: <a href="mailto:support@shophub.com">support@nextcart.com</a></p>
+        <p>Phone: 1-800-NextCart</p>
+        <p style="margin-top: 20px; font-size: 12px">
+          This email was sent to verify your account registration.
+          <br />© 2025 NextCart. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+`,
+  'seller-activation-mail': `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify Your Seller Account</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 300;
+      }
+      .content {
+        padding: 40px 30px;
+        line-height: 1.6;
+      }
+      .welcome-text {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #555;
+      }
+      .otp-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        margin: 30px 0;
+        border-left: 4px solid #28a745;
+      }
+      .otp-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .otp-code {
+        font-size: 32px;
+        font-weight: bold;
+        color: #28a745;
+        letter-spacing: 8px;
+        margin: 15px 0;
+        font-family: 'Courier New', monospace;
+      }
+      .otp-expiry {
+        font-size: 12px;
+        color: #888;
+        margin-top: 10px;
+      }
+      .instructions {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 25px 0;
+      }
+      .instructions h3 {
+        margin-top: 0;
+        color: #155724;
+        font-size: 16px;
+      }
+      .instructions ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+      .instructions li {
+        margin: 5px 0;
+        color: #155724;
+      }
+      .footer {
+        background-color: #f8f9fa;
+        padding: 30px;
+        text-align: center;
+        border-top: 1px solid #dee2e6;
+      }
+      .footer p {
+        margin: 5px 0;
+        color: #666;
+        font-size: 14px;
+      }
+      .footer a {
+        color: #28a745;
+        text-decoration: none;
+      }
+      .footer a:hover {
+        text-decoration: underline;
+      }
+      .security-notice {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 20px 0;
+        font-size: 14px;
+        color: #0c5460;
+      }
+      .brand-logo {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .seller-benefits {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 25px 0;
+      }
+      .seller-benefits h3 {
+        margin-top: 0;
+        color: #856404;
+        font-size: 16px;
+      }
+      .seller-benefits ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+      .seller-benefits li {
+        margin: 5px 0;
+        color: #856404;
+      }
+      @media (max-width: 600px) {
+        .container {
+          margin: 0 10px;
+        }
+        .header,
+        .content,
+        .footer {
+          padding: 20px;
+        }
+        .otp-code {
+          font-size: 28px;
+          letter-spacing: 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="brand-logo">NextCart</div>
+        <h1>Welcome to Our Seller Community!</h1>
+      </div>
+
+      <div class="content">
+        <p class="welcome-text">Hello <strong><%= name %></strong>,</p>
+
+        <p>
+          Welcome to NextCart's Seller Program! We're thrilled to have you join our marketplace as a seller. Your
+          business is about to reach thousands of customers looking for quality products. To complete your seller
+          account setup and start listing your products, please verify your email address using the code below.
+        </p>
+
+        <div class="otp-section">
+          <div class="otp-label">Your Seller Verification Code</div>
+          <div class="otp-code"><%= otp %></div>
+          <div class="otp-expiry">This code expires in 10 minutes</div>
+        </div>
+
+        <div class="instructions">
+          <h3>How to verify your seller account:</h3>
+          <ul>
+            <li>Return to the seller signup page on our website</li>
+            <li>Enter the 6-digit verification code shown above</li>
+            <li>Click "Verify Seller Account" to complete the process</li>
+            <li>Complete your business profile and start listing products</li>
+          </ul>
+        </div>
+
+        <div class="seller-benefits">
+          <h3>What's next after verification:</h3>
+          <ul>
+            <li>Set up your store profile and business information</li>
+            <li>Upload your first products with high-quality images</li>
+            <li>Configure payment and shipping settings</li>
+          </ul>
+        </div>
+
+        <div class="security-notice">
+          <strong>Security Notice:</strong> This verification code is confidential and should not be shared with anyone.
+          If you didn't request this seller account verification, please ignore this email or contact our seller support
+          team immediately.
+        </div>
+
+        <p>
+          Our dedicated seller support team is here to help you succeed. We offer comprehensive onboarding, marketing
+          tools, and 24/7 assistance to help your business grow.
+        </p>
+      </div>
+
+      <div class="footer">
+        <p><strong>NextCart Seller Support</strong></p>
+        <p>Email: <a href="mailto:sellers@nextcart.com">sellers@nextcart.com</a></p>
+        <p>Phone: 1-800-NextCart (Seller Line)</p>
+        <p style="margin-top: 20px; font-size: 12px">
+          This email was sent to verify your seller account registration.
+          <br />© 2025 NextCart. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+`,
+  'forgot-password-user-mail': `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reset Your Password</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 300;
+      }
+      .content {
+        padding: 40px 30px;
+        line-height: 1.6;
+      }
+      .welcome-text {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #555;
+      }
+      .otp-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        margin: 30px 0;
+        border-left: 4px solid #667eea;
+      }
+      .otp-label {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .otp-code {
+        font-size: 32px;
+        font-weight: bold;
+        color: #667eea;
+        letter-spacing: 8px;
+        margin: 15px 0;
+        font-family: 'Courier New', monospace;
+      }
+      .otp-expiry {
+        font-size: 12px;
+        color: #888;
+        margin-top: 10px;
+      }
+      .instructions {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+        padding: 20px;
+        margin: 25px 0;
+      }
+      .instructions h3 {
+        margin-top: 0;
+        color: #856404;
+        font-size: 16px;
+      }
+      .instructions ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+      .instructions li {
+        margin: 5px 0;
+        color: #856404;
+      }
+      .footer {
+        background-color: #f8f9fa;
+        padding: 30px;
+        text-align: center;
+        border-top: 1px solid #dee2e6;
+      }
+      .footer p {
+        margin: 5px 0;
+        color: #666;
+        font-size: 14px;
+      }
+      .footer a {
+        color: #667eea;
+        text-decoration: none;
+      }
+      .footer a:hover {
+        text-decoration: underline;
+      }
+      .security-notice {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 20px 0;
+        font-size: 14px;
+        color: #0c5460;
+      }
+      .brand-logo {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      @media (max-width: 600px) {
+        .container {
+          margin: 0 10px;
+        }
+        .header,
+        .content,
+        .footer {
+          padding: 20px;
+        }
+        .otp-code {
+          font-size: 28px;
+          letter-spacing: 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="brand-logo">NextCart</div>
+        <h1>Forgot Your Password?</h1>
+      </div>
+
+      <div class="content">
+        <p class="welcome-text">Hello <strong><%= name %></strong>,</p>
+
+        <p>
+          We received a request to reset the password for your NextCart account. Please use the code below to set up a
+          new password.
+        </p>
+
+        <div class="otp-section">
+          <div class="otp-label">Your Password Reset Code</div>
+          <div class="otp-code"><%= otp %></div>
+          <div class="otp-expiry">This code expires in 10 minutes</div>
+        </div>
+
+        <div class="instructions">
+          <h3>How to reset your password:</h3>
+          <ul>
+            <li>Return to the password reset page on our website</li>
+            <li>Enter the 4-digit code shown above</li>
+            <li>Follow the instructions to set a new password</li>
+          </ul>
+        </div>
+
+        <div class="security-notice">
+          <strong>Security Notice:</strong> This code is confidential and should not be shared with anyone. If you
+          didn't request a password reset, please ignore this email or contact our support team immediately.
+        </div>
+
+        <p>If you have any questions or need assistance, our customer support team is here to help 24/7.</p>
+      </div>
+
+      <div class="footer">
+        <p><strong>NextCart Customer Support</strong></p>
+        <p>Email: <a href="mailto:support@shophub.com">support@nextcart.com</a></p>
+        <p>Phone: 1-800-NextCart</p>
+        <p style="margin-top: 20px; font-size: 12px">
+          This email was sent because you requested a password reset.
+          <br />© 2025 NextCart. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+`,
+};
+
+export const getAuthInlineTemplate = (templateName: string): string | undefined => authInlineTemplates[templateName];

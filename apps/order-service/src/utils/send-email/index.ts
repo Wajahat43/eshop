@@ -4,6 +4,8 @@ import nodemail from 'nodemailer';
 import path from 'path';
 import { existsSync } from 'node:fs';
 
+import { getOrderInlineTemplate } from './templates';
+
 dotenv.config();
 
 const transporter = nodemail.createTransport({
@@ -18,6 +20,12 @@ const transporter = nodemail.createTransport({
 
 //Render an EJS email template
 const renderEmailTemplate = async (templateName: string, data: Record<string, any>): Promise<string> => {
+  const inlineTemplate = getOrderInlineTemplate(templateName);
+
+  if (inlineTemplate) {
+    return ejs.render(inlineTemplate, data);
+  }
+
   const templateCandidates = [
     path.join(__dirname, 'email-templates', `${templateName}.ejs`),
     path.join(__dirname, '..', 'email-templates', `${templateName}.ejs`),
