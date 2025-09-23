@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import ejs from 'ejs';
 import nodemail from 'nodemailer';
 import path from 'path';
+import { existsSync } from 'node:fs';
 
 dotenv.config();
 
@@ -17,15 +18,24 @@ const transporter = nodemail.createTransport({
 
 //Render an EJS email template
 const renderEmailTemplate = async (templateName: string, data: Record<string, any>): Promise<string> => {
-  const templatePath = path.join(
-    process.cwd(),
-    'apps',
-    'auth-service',
-    'src',
-    'utils',
-    'email-templates',
-    `${templateName}.ejs`,
-  );
+  const templateCandidates = [
+    path.join(__dirname, '..', 'email-templates', `${templateName}.ejs`),
+    path.join(
+      process.cwd(),
+      'apps',
+      'auth-service',
+      'src',
+      'utils',
+      'email-templates',
+      `${templateName}.ejs`,
+    ),
+  ];
+
+  const templatePath = templateCandidates.find((candidate) => existsSync(candidate));
+
+  if (!templatePath) {
+    throw new Error(`Email template ${templateName} not found`);
+  }
 
   return ejs.renderFile(templatePath, data);
 };
