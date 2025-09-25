@@ -48,7 +48,11 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
       try {
-        await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URI}/api/refresh-token`, {}, { withCredentials: true });
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}/api/refresh-seller-token`,
+          {},
+          { withCredentials: true },
+        );
         isRefreshing = false;
         onRefreshSuccess();
 
