@@ -17,7 +17,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ selectedConversatio
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+        <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
         <p className="text-muted-foreground">Loading conversations...</p>
       </div>
     );

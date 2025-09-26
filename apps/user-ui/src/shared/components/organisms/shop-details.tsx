@@ -84,8 +84,8 @@ const ShopDetails = ({ shop }: ShopDetailsProps) => {
   const averageRating = typeof shop.averageRating === 'number' ? shop.averageRating : shop.ratings || 0;
   const totalProducts = shop.totalProducts ?? shop.products?.length ?? 0;
   const totalReviews = shop.totalReviews ?? shop.reviews?.length ?? 0;
-  const avatarUrl = shop.avatar?.url || '/images/shop-logo-placeholder.png';
-  const coverUrl = shop.coverBanner || '/images/shop-banner-placeholder.png';
+  const avatarUrl = shop.avatar?.url || '/images/shop-logo-placeholder.svg';
+  const coverUrl = shop.coverBanner || '/images/shop-banner-placeholder.svg';
 
   const socialLinks: NormalizedSocialLink[] = Array.isArray(shop.social_links)
     ? (shop.social_links as SocialLink[])

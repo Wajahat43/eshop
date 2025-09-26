@@ -27,7 +27,13 @@ const onRefreshSuccess = () => {
 
 //Handle api requests
 axiosInstance.interceptors.request.use(
-  (config) => config,
+  (config) => {
+    const headers = config.headers ?? {};
+    (headers as any)['x-auth-actor'] = 'seller';
+    config.headers = headers;
+
+    return config;
+  },
   (error) => Promise.reject(error),
 );
 

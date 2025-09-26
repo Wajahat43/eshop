@@ -61,11 +61,13 @@ const HeaderBottom = () => {
       className={twMerge(
         'w-full transition-all duration-300 ease-out',
         isSticky
-          ? 'fixed top-0 left-0 z-[100] h-20 bg-background/80 backdrop-blur-md border-b border-border/60 shadow-lg'
+          ? 'fixed top-0 left-0 z-[100] h-12 bg-background/80 backdrop-blur-md border-b border-border/60 shadow-lg'
           : 'relative',
       )}
     >
-      <div className={twMerge('relative m-auto flex w-[80%] items-center justify-between', isSticky ? 'pt-3' : 'pt-0')}>
+      <div
+        className={twMerge('relative m-auto flex w-[80%] items-center justify-between', isSticky ? 'py-1.5' : 'py-2')}
+      >
         {/** Navigation Links */}
         <div className="flex items-center gap-6">
           {navItems.map((item, index) => {

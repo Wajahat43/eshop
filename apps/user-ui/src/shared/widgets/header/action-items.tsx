@@ -16,34 +16,34 @@ const ActionItems = () => {
     <div className="flex items-center gap-8">
       <div className="flex items-center gap-4">
         {/* User Profile Section */}
-        <div className="w-[120px] h-[50px] flex items-center justify-center">
+        <div className="w-[170px] h-[32px] flex items-center justify-center">
           {isLoading ? (
             <Spinner size="lg" />
           ) : user ? (
             <>
               <Link
                 href={'/profile'}
-                className="border-2 w-[50px] h-[50px] flex items-center justify-center rounded-full border-border mr-2"
+                className="border-2 w-[32px] h-[32px] flex items-center justify-center rounded-full border-border mr-2"
               >
-                <User />
+                <User size={18} />
               </Link>
               <Link href={'/profile'}>
-                <span className="block font-medium">Hello, </span>
-                <span className="font-semibold">{`${user.name}`}</span>
+                <span className="font-medium text-sm">Hello, </span>
+                <span className="font-semibold text-sm">{`${user.name}`}</span>
               </Link>
             </>
           ) : (
             <>
               <Link
                 href={'/login'}
-                className="border-2 w-[50px] h-[50px] flex items-center justify-center rounded-full border-border mr-2"
+                className="border-2 w-[32px] h-[32px] flex items-center justify-center rounded-full border-border mr-2"
               >
-                <User />
+                <User size={18} />
               </Link>
               <div className="flex items-center gap-4">
                 <Link href={'/login'}>
-                  <span className="block font-medium">Hello, </span>
-                  <span className="font-semibold"> Sign In</span>
+                  <span className="font-medium text-sm">Hello, </span>
+                  <span className="font-semibold text-sm">Sign In</span>
                 </Link>
               </div>
             </>

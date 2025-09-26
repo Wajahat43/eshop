@@ -4,7 +4,11 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useUser from '../../../hooks/userUser';
 import { useUserOrders } from '../../../hooks/useUserOrders';
-import { ProfileTabs, ProfileContent as ProfileContentSection, ProfileStats } from '../../../shared/components/organisms/profile';
+import {
+  ProfileTabs,
+  ProfileContent as ProfileContentSection,
+  ProfileStats,
+} from '../../../shared/components/organisms/profile';
 import { Spinner } from '../../../shared/components/spinner';
 import ProtectedRoute from '../../../shared/components/guards/protected-route';
 

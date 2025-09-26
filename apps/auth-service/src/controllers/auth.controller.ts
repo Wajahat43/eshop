@@ -115,9 +115,6 @@ export const UserLogin = async (request: Request, response: Response, next: Next
     setCookie(response, 'access_token', accessToken);
     setCookie(response, 'refresh_token', refreshToken);
 
-    response.clearCookie('seller_access_token');
-    response.clearCookie('seller_refresh_token');
-
     response.status(200).json({
       success: true,
       message: 'User logged in successfully!',
@@ -232,8 +229,6 @@ export const getUser = async (request: any, response: Response, next: NextFuncti
         return next(new AuthError('User or seller not found!'));
       }
 
-      response.clearCookie('seller_access_token');
-      response.clearCookie('seller_refresh_token');
       return next(new AuthError('User not Signed In!'));
     }
     response.status(200).json({ user });
@@ -391,9 +386,6 @@ export const sellerLogin = async (request: Request, response: Response, next: Ne
     setCookie(response, 'seller_access_token', accessToken);
     setCookie(response, 'seller_refresh_token', refreshToken);
 
-    response.clearCookie('access_token');
-    response.clearCookie('refresh_token');
-
     response.status(200).json({
       success: true,
       message: 'Seller logged in successfully!',
@@ -463,8 +455,6 @@ export const logoutUser = async (request: any, response: Response, next: NextFun
     // Clear all authentication cookies
     response.clearCookie('access_token');
     response.clearCookie('refresh_token');
-    response.clearCookie('seller_access_token');
-    response.clearCookie('seller_refresh_token');
 
     response.status(200).json({
       success: true,
@@ -479,8 +469,6 @@ export const logoutUser = async (request: any, response: Response, next: NextFun
 export const logoutSeller = async (request: any, response: Response, next: NextFunction) => {
   try {
     // Clear all authentication cookies
-    response.clearCookie('access_token');
-    response.clearCookie('refresh_token');
     response.clearCookie('seller_access_token');
     response.clearCookie('seller_refresh_token');
 

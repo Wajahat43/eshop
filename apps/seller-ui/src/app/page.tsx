@@ -210,7 +210,7 @@ const HomePage = () => {
               Chat with customers, answer questions, and provide support for your products.
             </p>
             <Link
-              href="/inbox"
+              href="/dashboard/inbox"
               className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-95 transition-opacity"
             >
               <MessageCircle className="h-4 w-4" />
