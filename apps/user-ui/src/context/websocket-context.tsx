@@ -22,6 +22,8 @@ interface WebSocketContextType {
   isConnecting: boolean;
   error: string | null;
   setMessageHandler: (handler: ((type: string, data: any) => void) | null) => void;
+  updateUnreadCount: (conversationId: string, count: number) => void;
+  removeUnreadCount: (conversationId: string) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -118,6 +120,31 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ user, chil
     };
   }, [user?.id]);
 
+  const updateUnreadCount = (conversationId: string, count: number) => {
+    setUnreadCounts((prev) => {
+      const current = prev[conversationId];
+      if (current === count) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [conversationId]: count,
+      };
+    });
+  };
+
+  const removeUnreadCount = (conversationId: string) => {
+    setUnreadCounts((prev) => {
+      if (!(conversationId in prev)) {
+        return prev;
+      }
+
+      const { [conversationId]: _removed, ...rest } = prev;
+      return rest;
+    });
+  };
+
   const value: WebSocketContextType = {
     ws: wsRef.current,
     unreadCounts,
@@ -125,6 +152,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ user, chil
     isConnecting,
     error,
     setMessageHandler,
+    updateUnreadCount,
+    removeUnreadCount,
   };
 
   return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
@@ -142,6 +171,12 @@ export const useWebSocket = (): WebSocketContextType => {
       isConnecting: false,
       error: 'WebSocket not available',
       setMessageHandler: () => {
+        // No-op function
+      },
+      updateUnreadCount: () => {
+        // No-op function
+      },
+      removeUnreadCount: () => {
         // No-op function
       },
     };

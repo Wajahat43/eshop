@@ -166,7 +166,7 @@ const PaymentSuccessPage = () => {
           </Link>
 
           <Link
-            href="/profile"
+            href="/profile?tab=orders"
             className="flex items-center justify-center space-x-2 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <Package className="w-5 h-5" />

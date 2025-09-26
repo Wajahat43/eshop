@@ -3,7 +3,7 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useWebSocket } from 'apps/seller-ui/src/context/websocket-context';
-import { useConversations } from 'apps/seller-ui/src/hooks/chat';
+import { useConversations, useMarkAsSeen } from 'apps/seller-ui/src/hooks/chat';
 import { ChatHeader, ChatWindow, ConversationList, EmptyChatState } from 'apps/seller-ui/src/shared/organisms';
 
 const InboxPageInner: React.FC = () => {
@@ -12,7 +12,8 @@ const InboxPageInner: React.FC = () => {
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isConnected, isConnecting, error, ws } = useWebSocket();
+  const { isConnected, isConnecting, error } = useWebSocket();
+  const { mutate: markConversationAsSeen } = useMarkAsSeen();
 
   const conversationsQuery = useConversations();
   const conversations = conversationsQuery.data?.conversations || [];
@@ -45,13 +46,7 @@ const InboxPageInner: React.FC = () => {
         router.replace('/dashboard/inbox');
       }
 
-      // Also mark it as seen using ws
-      ws?.send(
-        JSON.stringify({
-          type: 'MARK_AS_SEEN',
-          conversationId: conversationId,
-        }),
-      );
+      markConversationAsSeen({ conversationId });
     }
   };
 

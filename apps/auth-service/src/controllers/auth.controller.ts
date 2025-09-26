@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 
 import { AuthError, ValidationError } from '@packages/error-handler';
 import prisma from '@packages/libs/prisma';
+import imageKit from '@packages/libs/imageKit';
 import {
   checkOTPRestrictions,
   handleForgotPassword,
@@ -114,9 +115,6 @@ export const UserLogin = async (request: Request, response: Response, next: Next
     setCookie(response, 'access_token', accessToken);
     setCookie(response, 'refresh_token', refreshToken);
 
-    response.clearCookie('seller_access_token');
-    response.clearCookie('seller_refresh_token');
-
     response.status(200).json({
       success: true,
       message: 'User logged in successfully!',
@@ -134,10 +132,7 @@ export const UserLogin = async (request: Request, response: Response, next: Next
 //Refresh Token User
 export const RefreshToken = async (request: any, response: Response, next: NextFunction) => {
   try {
-    const refreshToken =
-      request.cookies['refresh_token'] ||
-      request.cookies['seller_refresh_token'] ||
-      request.headers.authorization?.split(' ')[1];
+    const refreshToken = request.cookies['refresh_token'] || request.headers.authorization?.split(' ')[1];
 
     if (!refreshToken) {
       throw new ValidationError('Unauthorized! No refresh token');
@@ -148,16 +143,11 @@ export const RefreshToken = async (request: any, response: Response, next: NextF
       role: string;
     };
 
-    if (!decoded || !decoded.id || !decoded.role) {
+    if (!decoded || !decoded.id || !decoded.role || decoded.role !== 'user') {
       return new JsonWebTokenError('Forbidden! Invalid refresh token');
     }
 
-    let account;
-    if (decoded.role === 'user') {
-      account = await prisma.users.findUnique({ where: { id: decoded.id } });
-    } else if (decoded.role === 'seller') {
-      account = await prisma.sellers.findUnique({ where: { id: decoded.id }, include: { shop: true } });
-    }
+    const account = await prisma.users.findUnique({ where: { id: decoded.id } });
 
     if (!account) {
       return new AuthError('User not found!');
@@ -174,15 +164,55 @@ export const RefreshToken = async (request: any, response: Response, next: NextF
       },
     );
 
-    if (decoded.role === 'user') {
-      setCookie(response, 'access_token', accessToken);
-    } else if (decoded.role === 'seller') {
-      setCookie(response, 'seller_access_token', accessToken);
-    }
+    setCookie(response, 'access_token', accessToken);
+    setCookie(response, 'refresh_token', refreshToken);
 
     request.role = decoded.role;
-    // store the tokens in httpOnly secure cookie
-    setCookie(response, 'refresh_token', refreshToken);
+    response.status(201).json({ success: true });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Refresh Token Seller
+export const RefreshSellerToken = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const refreshToken = request.cookies['seller_refresh_token'] || request.headers.authorization?.split(' ')[1];
+
+    if (!refreshToken) {
+      throw new ValidationError('Unauthorized! No refresh token');
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as {
+      id: string;
+      role: string;
+    };
+
+    if (!decoded || !decoded.id || !decoded.role || decoded.role !== 'seller') {
+      return new JsonWebTokenError('Forbidden! Invalid refresh token');
+    }
+
+    const account = await prisma.sellers.findUnique({ where: { id: decoded.id }, include: { shop: true } });
+
+    if (!account) {
+      return new AuthError('Seller not found!');
+    }
+
+    const accessToken = jwt.sign(
+      {
+        id: decoded.id,
+        role: decoded.role,
+      },
+      process.env.ACCESS_TOKEN_SECRET as string,
+      {
+        expiresIn: '72h',
+      },
+    );
+
+    setCookie(response, 'seller_access_token', accessToken);
+    setCookie(response, 'seller_refresh_token', refreshToken);
+
+    request.role = decoded.role;
     response.status(201).json({ success: true });
   } catch (error) {
     return next(error);
@@ -199,8 +229,6 @@ export const getUser = async (request: any, response: Response, next: NextFuncti
         return next(new AuthError('User or seller not found!'));
       }
 
-      response.clearCookie('seller_access_token');
-      response.clearCookie('seller_refresh_token');
       return next(new AuthError('User not Signed In!'));
     }
     response.status(200).json({ user });
@@ -291,7 +319,14 @@ export const verifySeller = async (request: Request, response: Response, next: N
     await verifyOTP(email, otp, next);
     const hashedPassword = await bcrypt.hash(password, 10);
     const seller = await prisma.sellers.create({
-      data: { name, email, password: hashedPassword, phone_number, country },
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        phone_number,
+        country,
+        shopId: null, // Explicitly set to null initially
+      },
     });
 
     response.status(200).json({
@@ -334,7 +369,7 @@ export const sellerLogin = async (request: Request, response: Response, next: Ne
         role: 'seller',
       },
       process.env.ACCESS_TOKEN_SECRET as string,
-      { expiresIn: '24h' },
+      { expiresIn: '72h' },
     );
 
     const refreshToken = jwt.sign(
@@ -343,16 +378,13 @@ export const sellerLogin = async (request: Request, response: Response, next: Ne
         role: 'seller',
       },
       process.env.REFRESH_TOKEN_SECRET as string,
-      { expiresIn: '7d' },
+      { expiresIn: '30d' },
     );
 
     //Because we set same cookies for user and seller, only one type of account can be logged in at a time.
     //Therefore, we are setting it differently.
     setCookie(response, 'seller_access_token', accessToken);
     setCookie(response, 'seller_refresh_token', refreshToken);
-
-    response.clearCookie('access_token');
-    response.clearCookie('refresh_token');
 
     response.status(200).json({
       success: true,
@@ -402,6 +434,12 @@ export const createNewShop = async (request: Request, response: Response, next: 
       data: shopData,
     });
 
+    // Update the seller's shopId to link them
+    await prisma.sellers.update({
+      where: { id: sellerId },
+      data: { shopId: shop.id },
+    });
+
     response.status(200).json({
       success: true,
       shop,
@@ -417,12 +455,26 @@ export const logoutUser = async (request: any, response: Response, next: NextFun
     // Clear all authentication cookies
     response.clearCookie('access_token');
     response.clearCookie('refresh_token');
+
+    response.status(200).json({
+      success: true,
+      message: 'Logged out successfully!',
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Logout seller
+export const logoutSeller = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    // Clear all authentication cookies
     response.clearCookie('seller_access_token');
     response.clearCookie('seller_refresh_token');
 
     response.status(200).json({
       success: true,
-      message: 'Logged out successfully!',
+      message: 'Seller logged out successfully!',
     });
   } catch (error) {
     return next(error);
@@ -659,6 +711,211 @@ export const changeUserPassword = async (request: any, response: Response, next:
   }
 };
 
+//Get shop information
+export const getShopInfo = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const sellerId = request.seller.id;
+
+    const shop = await prisma.shops.findUnique({
+      where: { sellerId },
+      include: {
+        avatar: true,
+        productAnalytics: true,
+      },
+    });
+
+    if (!shop) {
+      return next(new ValidationError('Shop not found!'));
+    }
+
+    response.status(200).json({
+      success: true,
+      shop,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Get shop information by id for public access
+export const getShopInfoById = async (request: Request, response: Response, next: NextFunction) => {
+  try {
+    const { shopId } = request.params;
+
+    if (!shopId) {
+      return next(new ValidationError('Shop ID is required!'));
+    }
+
+    const shop = await prisma.shops.findUnique({
+      where: { id: shopId },
+      include: {
+        avatar: true,
+        productAnalytics: true,
+        products: {
+          where: {
+            isDeleted: false,
+            status: 'ACTIVE',
+          },
+          include: {
+            images: true,
+            shop: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+        reviews: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+        sellers: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            country: true,
+            phone_number: true,
+          },
+        },
+      },
+    });
+
+    if (!shop) {
+      return next(new ValidationError('Shop not found!'));
+    }
+
+    const totalProducts = shop.products?.length || 0;
+    const totalReviews = shop.reviews?.length || 0;
+    const averageRating =
+      totalReviews > 0
+        ? shop.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / totalReviews
+        : shop.ratings || 0;
+
+    return response.status(200).json({
+      success: true,
+      shop: {
+        ...shop,
+        totalProducts,
+        totalReviews,
+        averageRating,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Update shop information
+export const updateShopInfo = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const sellerId = request.seller.id;
+    const { name, bio, address, opening_hours, website, category, social_links } = request.body;
+
+    // Validate required fields
+    if (!name || !bio || !address || !opening_hours || !category) {
+      return next(new ValidationError('Missing required fields!'));
+    }
+
+    const shop = await prisma.shops.findUnique({
+      where: { sellerId },
+    });
+
+    if (!shop) {
+      return next(new ValidationError('Shop not found!'));
+    }
+
+    const updateData: any = {
+      name,
+      bio,
+      address,
+      opening_hours,
+      category,
+    };
+
+    if (website && website.trim()) {
+      updateData.website = website;
+    }
+
+    if (social_links && Array.isArray(social_links)) {
+      updateData.social_links = social_links;
+    }
+
+    const updatedShop = await prisma.shops.update({
+      where: { sellerId },
+      data: updateData,
+      include: {
+        avatar: true,
+        productAnalytics: true,
+      },
+    });
+
+    response.status(200).json({
+      success: true,
+      message: 'Shop information updated successfully!',
+      shop: updatedShop,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//Update shop cover banner
+export const updateShopCoverBanner = async (request: any, response: Response, next: NextFunction) => {
+  try {
+    const sellerId = request.seller.id;
+    const { coverBanner } = request.body;
+
+    if (!coverBanner || typeof coverBanner !== 'string') {
+      return next(new ValidationError('Cover banner file is required!'));
+    }
+
+    const shop = await prisma.shops.findUnique({
+      where: { sellerId },
+    });
+
+    if (!shop) {
+      return next(new ValidationError('Shop not found!'));
+    }
+
+    const uploadResponse = await imageKit.upload({
+      file: coverBanner,
+      fileName: `shop-cover-${sellerId}-${Date.now()}.jpg`,
+      folder: '/shops/cover-banners',
+    });
+
+    const updatedShop = await prisma.shops.update({
+      where: { sellerId },
+      data: { coverBanner: uploadResponse.url },
+      include: {
+        avatar: true,
+        productAnalytics: true,
+      },
+    });
+
+    response.status(200).json({
+      success: true,
+      message: 'Cover banner updated successfully!',
+      shop: updatedShop,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 //Create stripe connect account link
 export const createStripeConnectLink = async (request: Request, response: Response, next: NextFunction) => {
   try {
@@ -708,8 +965,8 @@ export const createStripeConnectLink = async (request: Request, response: Respon
 
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
-      refresh_url: `http://localhost:3000/seller/success`,
-      return_url: `http://localhost:3000/seller/success`,
+      refresh_url: `https://nextcart-seller.vercel.app/seller/success`,
+      return_url: `https://nextcart-seller.vercel.app/seller/success`,
       type: 'account_onboarding',
     });
 

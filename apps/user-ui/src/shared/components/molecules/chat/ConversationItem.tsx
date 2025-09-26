@@ -3,6 +3,7 @@
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
 import UnreadBadge from './UnreadBadge';
+import { useWebSocket } from 'apps/user-ui/src/context/websocket-context';
 
 interface Shop {
   id: string;
@@ -33,6 +34,9 @@ interface ConversationItemProps {
 }
 
 const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, isSelected, onClick }) => {
+  const { unreadCounts } = useWebSocket();
+  const unseenCount = unreadCounts[conversation.id] ?? conversation.unseenCount;
+
   const formatLastMessageTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -100,7 +104,7 @@ const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, isSel
       </div>
 
       {/* Unread Badge */}
-      {conversation?.unseenCount > 0 && <UnreadBadge count={conversation.unseenCount} />}
+      {unseenCount > 0 && <UnreadBadge count={unseenCount} />}
     </div>
   );
 };

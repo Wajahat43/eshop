@@ -149,6 +149,7 @@ export const sendOrderConfirmationEmail = async (
     name,
     cart,
     totalAmount,
+    sessionId,
     trackingUrl: `https://nextcart.com/order/${sessionId}`,
   });
 };

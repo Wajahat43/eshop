@@ -27,7 +27,13 @@ const onRefreshSuccess = () => {
 
 //Handle api requests
 axiosInstance.interceptors.request.use(
-  (config) => config,
+  (config) => {
+    const headers = config.headers ?? {};
+    (headers as any)['x-auth-actor'] = 'seller';
+    config.headers = headers;
+
+    return config;
+  },
   (error) => Promise.reject(error),
 );
 
@@ -48,7 +54,11 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
       try {
-        await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URI}/api/refresh-token`, {}, { withCredentials: true });
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_SERVER_URI}/api/refresh-seller-token`,
+          {},
+          { withCredentials: true },
+        );
         isRefreshing = false;
         onRefreshSuccess();
 

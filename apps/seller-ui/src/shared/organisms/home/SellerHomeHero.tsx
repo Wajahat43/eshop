@@ -22,10 +22,10 @@ const SellerHomeHero: React.FC<SellerHomeHeroProps> = ({
 }) => {
   return (
     <section className="rounded-xl overflow-hidden border border-border bg-card text-card-foreground shadow">
-      <div className="relative h-40 md:h-52 bg-muted">
+      <div className="relative h-40 md:h-[24rem] bg-muted">
         {bannerUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={bannerUrl} alt="Shop banner" className="h-full w-full object-cover" />
+          <img src={bannerUrl} alt="Shop banner" className="h-full w-full object-fit" />
         ) : null}
         <div className="absolute -bottom-6 left-4">
           <AvatarWithText

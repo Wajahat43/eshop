@@ -10,6 +10,7 @@ export { default as ProductGrid } from './product-grid';
 export { default as ShopCard } from './shop-card';
 export { default as ShopFilters } from './shop-filters';
 export { default as ShopGrid } from './shop-grid';
+export { default as ShopDetails } from './shop-details';
 export { default as TopShops } from './top-shops';
 export * from './profile';
 export * from './chat';

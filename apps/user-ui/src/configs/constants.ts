@@ -21,7 +21,7 @@ export const navItems: NavItemsTypes[] = [
   },
   {
     title: 'Become Seller',
-    href: '/seller',
+    href: 'https://nextcart-seller.vercel.app/',
   },
 ];
 

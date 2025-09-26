@@ -61,22 +61,37 @@ const HeaderBottom = () => {
       className={twMerge(
         'w-full transition-all duration-300 ease-out',
         isSticky
-          ? 'fixed top-0 left-0 z-[100] h-20 bg-background/80 backdrop-blur-md border-b border-border/60 shadow-lg'
+          ? 'fixed top-0 left-0 z-[100] h-12 bg-background/80 backdrop-blur-md border-b border-border/60 shadow-lg'
           : 'relative',
       )}
     >
-      <div className={twMerge('relative m-auto flex w-[80%] items-center justify-between', isSticky ? 'pt-3' : 'pt-0')}>
+      <div
+        className={twMerge('relative m-auto flex w-[80%] items-center justify-between', isSticky ? 'py-1.5' : 'py-2')}
+      >
         {/** Navigation Links */}
         <div className="flex items-center gap-6">
-          {navItems.map((item, index) => (
-            <Link
-              className="px-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
-              key={index}
-              href={item.href}
-            >
-              {item.title}
-            </Link>
-          ))}
+          {navItems.map((item, index) => {
+            const isExternalLink = item.href.startsWith('http');
+            return isExternalLink ? (
+              <a
+                className="px-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+                key={index}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {item.title}
+              </a>
+            ) : (
+              <Link
+                className="px-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+                key={index}
+                href={item.href}
+              >
+                {item.title}
+              </Link>
+            );
+          })}
         </div>
 
         {/** Sticky Action Items - Always render but conditionally show */}

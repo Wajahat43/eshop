@@ -34,7 +34,9 @@ const ShopSummaryCard: React.FC<ShopSummaryCardProps> = ({
         {rating !== undefined ? (
           <InfoRow label="Rating" value={<span className="font-medium">{rating.toFixed(1)}</span>} />
         ) : null}
-        {address ? <InfoRow label="Address" value={<span className="truncate max-w-[240px]">{address}</span>} /> : null}
+        {address ? (
+          <InfoRow label="Address: " value={<span className="break-words max-w-[240px]">{address}</span>} />
+        ) : null}
         <div className="flex items-center gap-2 text-sm">
           <StatusBadge label={`${totalProducts} products`} status="info" />
           <StatusBadge label={`${activeOffers} offers`} status="success" />
