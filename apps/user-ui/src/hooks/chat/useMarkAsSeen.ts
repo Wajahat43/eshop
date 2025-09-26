@@ -5,30 +5,78 @@ interface MarkAsSeenData {
   conversationId: string;
 }
 
-interface MarkAsSeenResponse {
-  success: boolean;
+interface ConversationsCache {
+  conversations: Array<{
+    id: string;
+    unseenCount: number;
+    [key: string]: any;
+  }>;
 }
-
-const markAsSeen = async (data: MarkAsSeenData): Promise<MarkAsSeenResponse> => {
-  // For now, we'll just return success since the actual marking is handled by WebSocket
-  return { success: true };
-};
 
 export const useMarkAsSeen = () => {
   const queryClient = useQueryClient();
-  const { sendMessage: wsSendMessage } = useWebSocket();
+  const { ws, isConnected, error: wsError, unreadCounts, updateUnreadCount, removeUnreadCount } = useWebSocket();
 
-  return useMutation({
-    mutationFn: markAsSeen,
-    onSuccess: (data, variables) => {
-      // Send mark as seen message via WebSocket
-      wsSendMessage({
-        type: 'MARK_AS_SEEN',
-        conversationId: variables.conversationId,
+  return useMutation<
+    { conversationId: string },
+    Error,
+    MarkAsSeenData,
+    {
+      previousData?: ConversationsCache;
+      previousUnreadCount?: number;
+      hadUnreadEntry: boolean;
+    }
+  >({
+    mutationFn: async ({ conversationId }: MarkAsSeenData) => {
+      if (!ws || !isConnected || ws.readyState !== WebSocket.OPEN) {
+        throw new Error(`WebSocket not connected. Status: ${wsError || 'Connection failed'}`);
+      }
+
+      ws.send(
+        JSON.stringify({
+          type: 'MARK_AS_SEEN',
+          conversationId,
+        }),
+      );
+
+      return { conversationId };
+    },
+    onMutate: async ({ conversationId }) => {
+      await queryClient.cancelQueries({ queryKey: ['conversations'] });
+
+      const previousData = queryClient.getQueryData<ConversationsCache>(['conversations']);
+      const hadUnreadEntry = Object.prototype.hasOwnProperty.call(unreadCounts, conversationId);
+      const previousUnreadCount = unreadCounts[conversationId];
+
+      queryClient.setQueryData<ConversationsCache | undefined>(['conversations'], (oldData) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          conversations: oldData.conversations.map((conversation) =>
+            conversation.id === conversationId
+              ? {
+                  ...conversation,
+                  unseenCount: 0,
+                }
+              : conversation,
+          ),
+        };
       });
 
-      // Invalidate conversations query to update unread counts
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      updateUnreadCount(conversationId, 0);
+
+      return { previousData, previousUnreadCount, hadUnreadEntry };
+    },
+    onError: (_error, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['conversations'], context.previousData);
+      }
+      if (context?.hadUnreadEntry && context.previousUnreadCount !== undefined) {
+        updateUnreadCount(variables.conversationId, context.previousUnreadCount);
+      } else if (context && !context.hadUnreadEntry) {
+        removeUnreadCount(variables.conversationId);
+      }
     },
   });
 };

@@ -40,7 +40,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, seller }) => {
   });
 
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
-  const markAsSeenMutation = useMarkAsSeen();
+  const { mutate: markAsSeen, isPending: isMarking } = useMarkAsSeen();
 
   const { data, isLoading, isError, error } = messagesQuery;
   const sellerInfo = data?.seller || seller;
@@ -59,24 +59,65 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, seller }) => {
   // Mark messages as seen when conversation is selected
   useEffect(() => {
     if (conversationId && user?.id) {
-      markAsSeenMutation.mutate({ conversationId });
+      markAsSeen({ conversationId });
     }
-  }, [conversationId, user?.id]);
+  }, [conversationId, user?.id, markAsSeen]);
 
   // Receive new messages from websocket
   useEffect(() => {
     // Set the message handler
     const messageHandler = (type: string, data: any) => {
-      if (type === 'NEW_MESSAGE') {
-        if (data.conversationId === conversationId) {
-          queryClient.setQueryData(['messages', conversationId, 1, 50], (oldData: any) => {
-            if (!oldData) return oldData;
-            return {
-              ...oldData,
-              messages: [...oldData.messages, data],
-            };
-          });
+      if (type !== 'NEW_MESSAGE' || !data?.conversationId) {
+        return;
+      }
+
+      const incomingConversationId = data.conversationId;
+
+      queryClient.setQueryData(['conversations'], (oldData: any) => {
+        if (!oldData) return oldData;
+
+        const conversations = oldData.conversations || [];
+        const nextConversation = conversations.find((conversation: any) => conversation.id === incomingConversationId);
+
+        if (!nextConversation) {
+          return oldData;
         }
+
+        const updatedConversation = {
+          ...nextConversation,
+          lastMessage: {
+            id: data.id || nextConversation.lastMessage?.id || data.messageId || '',
+            content: data.content,
+            senderId: data.senderId,
+            senderType: data.senderType,
+            createdAt: data.createdAt,
+          },
+          updatedAt: data.createdAt || new Date().toISOString(),
+        };
+
+        return {
+          ...oldData,
+          conversations: [
+            updatedConversation,
+            ...conversations.filter((conversation: any) => conversation.id !== incomingConversationId),
+          ],
+        };
+      });
+
+      if (incomingConversationId !== conversationId) {
+        return;
+      }
+
+      queryClient.setQueryData(['messages', conversationId, 1, 50], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          messages: [...oldData.messages, data],
+        };
+      });
+
+      if (data.senderId !== user?.id && !isMarking) {
+        markAsSeen({ conversationId });
       }
     };
 
@@ -86,7 +127,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, seller }) => {
     return () => {
       setMessageHandler(null);
     };
-  }, [setMessageHandler, conversationId, queryClient]);
+  }, [setMessageHandler, conversationId, queryClient, markAsSeen, isMarking, user?.id]);
 
   const handleSendMessage = (content: string) => {
     if (!conversationId || !user?.id || !sellerInfo) return;

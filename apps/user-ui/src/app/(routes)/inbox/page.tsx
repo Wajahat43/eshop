@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ConversationList, ChatWindow, ChatHeader, EmptyChatState } from '../../../shared/components/organisms/chat';
-import { useConversations } from '../../../hooks/chat';
+import { useConversations, useMarkAsSeen } from '../../../hooks/chat';
 import { useWebSocket } from '../../../context/websocket-context';
 import ProtectedRoute from '../../../shared/components/guards/protected-route';
 
@@ -37,7 +37,8 @@ const InboxContent: React.FC = () => {
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isConnected, isConnecting, error, ws } = useWebSocket();
+  const { isConnected, isConnecting, error } = useWebSocket();
+  const { mutate: markConversationAsSeen } = useMarkAsSeen();
 
   const conversationsQuery = useConversations();
   const conversations = useMemo(
@@ -68,12 +69,7 @@ const InboxContent: React.FC = () => {
         router.replace('/inbox');
       }
 
-      ws?.send(
-        JSON.stringify({
-          type: 'MARK_AS_SEEN',
-          conversationId,
-        }),
-      );
+      markConversationAsSeen({ conversationId });
     }
   };
 

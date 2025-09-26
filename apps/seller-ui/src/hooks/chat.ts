@@ -110,7 +110,15 @@ export const useSendMessage = () => {
   const queryClient = useQueryClient();
   const { ws, isConnected, error: wsError } = useWebSocket();
 
-  return useMutation({
+  return useMutation<
+    { conversationId: string },
+    Error,
+    MarkAsSeenData,
+    {
+      previousData?: { conversations: Conversation[] };
+      previousUnreadCount?: number;
+    }
+  >({
     mutationFn: async (data: SendMessageData) => {
       // Check WebSocket connection status
       if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN) {
@@ -134,55 +142,73 @@ export const useSendMessage = () => {
 
 export const useMarkAsSeen = () => {
   const queryClient = useQueryClient();
-  const { ws, isConnected, error: wsError } = useWebSocket();
+  const { ws, isConnected, error: wsError, unreadCounts, updateUnreadCount, removeUnreadCount } = useWebSocket();
 
-  return useMutation({
-    mutationFn: async (data: MarkAsSeenData) => {
-      // Check WebSocket connection status
+  return useMutation<
+    { conversationId: string },
+    Error,
+    MarkAsSeenData,
+    {
+      previousData?: { conversations: Conversation[] };
+      previousUnreadCount?: number;
+      hadUnreadEntry: boolean;
+    }
+  >({
+    mutationFn: async ({ conversationId }: MarkAsSeenData) => {
       if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN) {
         throw new Error(`WebSocket not connected. Status: ${wsError || 'Connection failed'}`);
       }
 
-      try {
-        // Send mark as seen through WebSocket - server expects MARK_AS_SEEN
-        ws.send(
-          JSON.stringify({
-            type: 'MARK_AS_SEEN',
-            conversationId: data.conversationId,
-            senderId: '', // Required by server but not used for this operation
-            receiverId: '', // Required by server but not used for this operation
-            messageBody: '', // Required by server but not used for this operation
-            senderType: 'seller', // Required by server
-          }),
-        );
-        return { unseenCount: 0 };
-      } catch (error) {
-        throw new Error(`Failed to mark as seen: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
+      ws.send(
+        JSON.stringify({
+          type: 'MARK_AS_SEEN',
+          conversationId,
+          senderId: '',
+          receiverId: '',
+          messageBody: '',
+          senderType: 'seller',
+        }),
+      );
+
+      return { conversationId };
     },
-    onSuccess: (data, variables) => {
-      // Update conversation list to clear unseen count
+    onMutate: async ({ conversationId }) => {
+      await queryClient.cancelQueries({ queryKey: ['seller-conversations'] });
+
+      const previousData = queryClient.getQueryData<{ conversations: Conversation[] }>(['seller-conversations']);
+      const hadUnreadEntry = Object.prototype.hasOwnProperty.call(unreadCounts, conversationId);
+      const previousUnreadCount = unreadCounts[conversationId];
+
       queryClient.setQueryData(['seller-conversations'], (oldData: any) => {
         if (!oldData) return oldData;
+
         return {
           ...oldData,
-          conversations: oldData.conversations.map((conv: Conversation) => {
-            if (conv.id === variables.conversationId) {
-              return {
-                ...conv,
-                unseenCount: data.unseenCount,
-              };
-            }
-            return conv;
-          }),
+          conversations: oldData.conversations.map((conv: Conversation) =>
+            conv.id === conversationId
+              ? {
+                  ...conv,
+                  unseenCount: 0,
+                }
+              : conv,
+          ),
         };
       });
 
-      // Invalidate queries to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['seller-conversations'] });
+      updateUnreadCount(conversationId, 0);
+
+      return { previousData, previousUnreadCount, hadUnreadEntry };
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
       console.error('Failed to mark as seen:', error);
+      if (context?.previousData) {
+        queryClient.setQueryData(['seller-conversations'], context.previousData);
+      }
+      if (context?.hadUnreadEntry && context.previousUnreadCount !== undefined) {
+        updateUnreadCount(variables.conversationId, context.previousUnreadCount);
+      } else if (context && !context.hadUnreadEntry) {
+        removeUnreadCount(variables.conversationId);
+      }
     },
   });
 };
