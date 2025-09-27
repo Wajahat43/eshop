@@ -211,8 +211,8 @@ model orders {
   total             Float
   status            OrderStatus @default(PENDING)
   shippingAddressId String? @db.ObjectId
-  couponCode        String?
-  discountAmount    Float @default(0)
+  totalDiscount     Float @default(0)
+  appliedCoupons    Json?
   trackingNumber    String?
   estimatedDelivery DateTime?
   createdAt         DateTime @default(now())
@@ -232,6 +232,8 @@ model orderItems {
   quantity         Int
   price            Float
   selectedOptions  Json? // Store selected colors, sizes, etc.
+  discountAmount   Float @default(0)
+  coupon           Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   

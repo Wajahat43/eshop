@@ -30,7 +30,7 @@ const ShopCard = ({ shop }: ShopCardProps) => {
       {/* Banner Image */}
       <div className="relative overflow-hidden h-32">
         <Image
-          src={shop?.coverBanner || '/images/shop-banner-placeholder.png'}
+          src={shop?.coverBanner || '/images/shop-banner-placeholder.svg'}
           alt={`${shop.name} banner`}
           className="w-full object-cover h-full transition-transform duration-300 group-hover:scale-105"
           width={400}
@@ -44,7 +44,7 @@ const ShopCard = ({ shop }: ShopCardProps) => {
       <div className="absolute top-20 left-4 z-10">
         <div className="w-16 h-16 bg-card rounded-full border-4 border-background shadow-lg overflow-hidden">
           <Image
-            src={shop?.products?.[0]?.images?.[0]?.url || '/images/shop-logo-placeholder.png'}
+            src={shop?.products?.[0]?.images?.[0]?.url || '/images/shop-logo-placeholder.svg'}
             alt={`${shop.name} logo`}
             className="w-full h-full object-cover"
             width={64}

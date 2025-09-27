@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import axiosInstance from '../utils/axiosIsntance';
 import { useWebSocket } from '../context/websocket-context';
 
@@ -106,14 +106,28 @@ export const useMessages = ({
   });
 };
 
+// Infinite query for seller chat messages
+export const useInfiniteMessages = ({ conversationId, limit = 20 }: { conversationId: string; limit?: number }) => {
+  return useInfiniteQuery({
+    queryKey: ['seller-messages', 'infinite', conversationId, limit],
+    queryFn: ({ pageParam = 1 }) => fetchSellerMessages({ conversationId, page: pageParam, limit }),
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.currentPage + 1 : undefined;
+    },
+    initialPageParam: 1,
+    enabled: !!conversationId,
+    staleTime: 1000 * 10, // 10 seconds
+    refetchOnWindowFocus: false,
+  });
+};
+
 export const useSendMessage = () => {
-  const queryClient = useQueryClient();
   const { ws, isConnected, error: wsError } = useWebSocket();
 
   return useMutation<
     { conversationId: string },
     Error,
-    MarkAsSeenData,
+    SendMessageData,
     {
       previousData?: { conversations: Conversation[] };
       previousUnreadCount?: number;
@@ -136,6 +150,8 @@ export const useSendMessage = () => {
           senderType: data.senderType,
         }),
       );
+
+      return { conversationId: data.conversationId };
     },
   });
 };
@@ -179,7 +195,7 @@ export const useMarkAsSeen = () => {
       const hadUnreadEntry = Object.prototype.hasOwnProperty.call(unreadCounts, conversationId);
       const previousUnreadCount = unreadCounts[conversationId];
 
-      queryClient.setQueryData(['seller-conversations'], (oldData: any) => {
+      queryClient.setQueryData(['seller-conversations'], (oldData: { conversations: Conversation[] } | undefined) => {
         if (!oldData) return oldData;
 
         return {

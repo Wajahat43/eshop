@@ -33,14 +33,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       openGraph: {
         title: product.name || 'Product Details',
         description: product.short_description || product.description || 'Product details and information',
-        images: product.images?.[0]?.url ? [product.images[0].url] : [],
+        images: product.images?.[0]?.url ? [product.images[0].url] : ['/placeholder-image.jpg'],
         type: 'website',
       },
       twitter: {
         card: 'summary_large_image',
         title: product.name || 'Product Details',
         description: product.short_description || product.description || 'Product details and information',
-        images: product.images?.[0]?.url ? [product.images[0].url] : [],
+        images: product.images?.[0]?.url ? [product.images[0].url] : ['/placeholder-image.jpg'],
       },
     };
   } catch (error) {

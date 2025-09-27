@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Trash, Plus, Minus, Loader2 } from 'lucide-react';
+import { Trash, Plus, Minus, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { useStore } from 'apps/user-ui/src/store';
 import useUser from 'apps/user-ui/src/hooks/userUser';
 import useLocationTracking from 'apps/user-ui/src/hooks/useLocationTracking';
@@ -13,6 +13,9 @@ import useProducts from 'apps/user-ui/src/hooks/useProducts';
 import { useUserAddresses } from 'apps/user-ui/src/hooks/useUserAddresses';
 import usePaymentSession from 'apps/user-ui/src/hooks/usePaymentSession';
 import ProtectedRoute from '../../../shared/components/guards/protected-route';
+import { PageLoader } from '../../../shared/components/molecules';
+
+import Input from 'packages/components/input';
 
 const CartPage = () => {
   return (
@@ -22,14 +25,7 @@ const CartPage = () => {
   );
 };
 
-const CartLoadingFallback = () => (
-  <div className="flex min-h-[60vh] items-center justify-center">
-    <div className="flex flex-col items-center gap-3" role="status">
-      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      <span className="text-sm font-medium text-muted-foreground">Loading your cart…</span>
-    </div>
-  </div>
-);
+const CartLoadingFallback = () => <PageLoader message="Loading your cart…" />;
 
 const CartScreen = () => {
   const { cart, removeFromCart, setCartQuantity } = useStore();
@@ -39,9 +35,21 @@ const CartScreen = () => {
 
   const { getProductsQuery } = useProducts({});
   const { data: addresses = [], isLoading: addressesLoading } = useUserAddresses();
-  const { createPaymentSession, isLoading: isCreatingSession, error: sessionError } = usePaymentSession();
+  const {
+    createPaymentSession,
+    isLoading: isCreatingSession,
+    error: sessionError,
+    appliedCoupons,
+    perItemCoupons,
+    invalidCouponCodes,
+    unappliedCouponCodes,
+    couponCodes,
+    updateCouponState,
+    resetCouponState,
+  } = usePaymentSession();
 
-  const [coupon, setCoupon] = useState('');
+  const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState<string | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('online');
 
@@ -71,6 +79,85 @@ const CartScreen = () => {
       .filter(Boolean);
   }, [cart, getProductsQuery.data]);
 
+  const previousCartSignatureRef = React.useRef<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    if (enrichedCart.length === 0) {
+      previousCartSignatureRef.current = undefined;
+      resetCouponState();
+      return;
+    }
+
+    const signature = enrichedCart.map((item: any) => `${item.id}:${item.quantity}`).join('|');
+
+    if (previousCartSignatureRef.current !== signature) {
+      previousCartSignatureRef.current = signature;
+      if (couponCodes.length > 0) {
+        updateCouponState(enrichedCart, couponCodes);
+      }
+    }
+  }, [enrichedCart, couponCodes, updateCouponState, resetCouponState]);
+
+  const handleAddCoupon = async () => {
+    const trimmed = couponInput.trim();
+
+    if (!trimmed) {
+      setCouponError('Enter a coupon code');
+      return;
+    }
+
+    if (couponCodes.includes(trimmed)) {
+      setCouponError('Coupon already added');
+      return;
+    }
+
+    if (enrichedCart.length === 0) {
+      setCouponError('Add items to cart before applying coupons');
+      return;
+    }
+
+    const previousCodes = [...couponCodes];
+
+    try {
+      const result = await updateCouponState(enrichedCart, [...couponCodes, trimmed]);
+      const invalid = result?.invalidCouponCodes ?? [];
+      const unapplied = result?.unappliedCouponCodes ?? [];
+
+      if (invalid.includes(trimmed) || unapplied.includes(trimmed)) {
+        setCouponError(
+          invalid.includes(trimmed) ? 'Coupon is invalid' : 'Coupon does not apply to any items in your cart',
+        );
+        await updateCouponState(enrichedCart, previousCodes);
+      } else {
+        setCouponError(null);
+      }
+
+      setCouponInput('');
+    } catch (error) {
+      console.error('Failed to validate coupon:', error);
+      setCouponError('Unable to validate coupon right now');
+    }
+  };
+
+  const handleRemoveCoupon = async (code: string) => {
+    if (enrichedCart.length === 0) {
+      resetCouponState();
+      return;
+    }
+
+    setCouponError(null);
+
+    try {
+      await updateCouponState(
+        enrichedCart,
+        couponCodes.filter((couponCode) => couponCode.toLowerCase() !== code.toLowerCase()),
+      );
+    } catch (error) {
+      console.error('Failed to update coupons after removal:', error);
+      setCouponError('Unable to update coupons right now');
+    }
+  };
+
   const handleQuantityChange = (product: any, newQuantity: number) => {
     if (newQuantity < 1) {
       removeFromCart(product.id, user, location, deviceInfo);
@@ -78,6 +165,8 @@ const CartScreen = () => {
       setCartQuantity(product.id, newQuantity);
     }
   };
+
+  const perItemCouponLookup = perItemCoupons || {};
 
   const columns = useMemo(() => {
     return [
@@ -89,13 +178,13 @@ const CartScreen = () => {
           return (
             <div className="flex items-center gap-4">
               <Image
-                src={product.images[0]?.url || '/images/placeholder.png'}
+                src={product.images?.[0]?.url || '/placeholder-image.jpg'}
                 alt={product.title}
                 width={100}
                 height={100}
                 className="h-24 w-24 rounded-lg object-cover"
               />
-              <div>
+              <div className="space-y-1">
                 <Link
                   href={`/product/${product.slug}`}
                   className="hover:underline hover:text-primary font-semibold text-lg"
@@ -103,6 +192,23 @@ const CartScreen = () => {
                   {product.title}
                 </Link>
                 <p className="text-sm text-muted-foreground">{product.category}</p>
+                {perItemCouponLookup[product.id]?.code ? (
+                  <div className="flex items-center gap-1 text-emerald-600 text-xs sm:text-sm">
+                    <CheckCircle2 className="h-3 w-3" />
+                    <span>
+                      Coupon {perItemCouponLookup[product.id].code} (-
+                      {perItemCouponLookup[product.id].discountType === 'PERCENT'
+                        ? `${perItemCouponLookup[product.id].discountValue}%`
+                        : `$${perItemCouponLookup[product.id].discountAmount.toFixed(2)}`}
+                      )
+                    </span>
+                  </div>
+                ) : appliedCoupons?.coupons?.length > 0 ? (
+                  <div className="flex items-center gap-1 text-amber-600 text-xs sm:text-sm">
+                    <AlertCircle className="h-3 w-3" />
+                    <span>No coupon applied</span>
+                  </div>
+                ) : null}
               </div>
             </div>
           );
@@ -155,7 +261,7 @@ const CartScreen = () => {
         },
       },
     ];
-  }, [removeFromCart, setCartQuantity, user, location, deviceInfo]);
+  }, [removeFromCart, setCartQuantity, user, location, deviceInfo, perItemCouponLookup, appliedCoupons]);
 
   const table = useReactTable({
     data: enrichedCart,
@@ -167,17 +273,11 @@ const CartScreen = () => {
     return enrichedCart.reduce((acc, item) => acc + item.sale_price * item.quantity, 0);
   }, [enrichedCart]);
 
-  const total = subtotal; // For now, total is the same as subtotal
+  const discountAmount = appliedCoupons?.totalDiscount ?? 0;
+  const total = useMemo(() => Math.max(subtotal - discountAmount, 0), [subtotal, discountAmount]);
 
   if (getProductsQuery.isLoading) {
-    return (
-      <div className="flex min-h-[60vh] w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3" role="status">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <span className="text-sm font-medium text-muted-foreground">Loading your cart…</span>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Loading your cart…" />;
   }
 
   if (cart.length === 0) {
@@ -231,24 +331,73 @@ const CartScreen = () => {
             <span>Subtotal</span>
             <span className="font-semibold">${subtotal.toFixed(2)}</span>
           </div>
+          <div className="flex justify-between items-center text-sm text-emerald-600">
+            <span>Discounts</span>
+            <span>- ${discountAmount.toFixed(2)}</span>
+          </div>
           <hr />
           <div className="space-y-2">
             <label htmlFor="coupon" className="font-medium">
               Have a coupon?
             </label>
-            <div className="flex gap-2">
-              <input
+            <div className="flex gap-2 flex-wrap">
+              <Input
                 type="text"
                 id="coupon"
-                value={coupon}
-                onChange={(e) => setCoupon(e.target.value)}
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value)}
                 placeholder="Enter coupon code"
-                className="flex-grow p-2 border rounded-md bg-background text-foreground border-border"
+                className="flex-grow"
               />
-              <button className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">
+              <button
+                type="button"
+                onClick={handleAddCoupon}
+                disabled={!couponInput.trim()}
+                className={`px-4 py-2 rounded-md border transition-colors ${
+                  couponInput.trim()
+                    ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
+                }`}
+              >
                 Apply
               </button>
             </div>
+            {couponError && <p className="text-destructive text-sm">{couponError}</p>}
+            {sessionError && <p className="text-destructive text-sm">{sessionError.message}</p>}
+            {invalidCouponCodes && invalidCouponCodes.length > 0 && (
+              <p className="text-destructive text-xs">Invalid: {invalidCouponCodes.join(', ')}</p>
+            )}
+            {unappliedCouponCodes && unappliedCouponCodes.length > 0 && (
+              <p className="text-amber-600 text-xs">Not applied: {unappliedCouponCodes.join(', ')}</p>
+            )}
+            {couponCodes.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Applied coupons</p>
+                <div className="flex flex-wrap gap-2">
+                  {couponCodes.map((code) => (
+                    <span
+                      key={code}
+                      className="inline-flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs"
+                    >
+                      {code}
+                      <button type="button" onClick={() => handleRemoveCoupon(code)} className="text-primary">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {appliedCoupons?.coupons?.length ? (
+              <div className="space-y-1 text-xs text-muted-foreground">
+                {appliedCoupons.coupons.map((coupon: any) => (
+                  <div key={coupon.code} className="flex justify-between">
+                    <span>{coupon.code}</span>
+                    <span>- ${coupon.discountAmount.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
           <hr />
           <div className="space-y-2">
@@ -325,7 +474,7 @@ const CartScreen = () => {
                   cart: enrichedCart,
                   userId: user.id,
                   selectedAddressId,
-                  coupon: coupon || undefined,
+                  couponCodes: couponCodes,
                 });
               } catch (err) {
                 console.error('Failed to create payment session:', err);

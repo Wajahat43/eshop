@@ -70,11 +70,11 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                   smallImage: {
                     alt: product?.title,
                     isFluidWidth: true,
-                    src: product?.images?.[currentImage]?.url || '/images/placeholder.png',
+                    src: product?.images?.[currentImage]?.url || '/placeholder-image.jpg',
                   },
                   largeImage: {
                     alt: product?.title,
-                    src: product?.images?.[currentImage]?.url || '/images/placeholder.png',
+                    src: product?.images?.[currentImage]?.url || '/placeholder-image.jpg',
                     width: 1200,
                     height: 1200,
                   },

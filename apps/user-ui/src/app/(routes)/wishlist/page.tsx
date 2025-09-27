@@ -10,6 +10,7 @@ import useUser from 'apps/user-ui/src/hooks/userUser';
 import useLocationTracking from 'apps/user-ui/src/hooks/useLocationTracking';
 import useDeviceTracking from 'apps/user-ui/src/hooks/useDeviceTracking';
 import useProducts from 'apps/user-ui/src/hooks/useProducts';
+import { PageLoader } from '../../../shared/components/molecules';
 
 const WishlistPage = () => {
   const { wishlist, cart, addToCart, removeFromWishlist } = useStore();
@@ -50,7 +51,7 @@ const WishlistPage = () => {
           return (
             <div className="flex items-center gap-4">
               <Image
-                src={product.images[0]?.url || '/images/placeholder.png'}
+                src={product.images?.[0]?.url || '/placeholder-image.jpg'}
                 alt={product.title}
                 width={80}
                 height={80}
@@ -133,14 +134,14 @@ const WishlistPage = () => {
   });
 
   if (getProductsQuery.isLoading) {
-    return <div>Loading...</div>; // Or a spinner
+    return <PageLoader message="Loading your wishlist…" />;
   }
 
   if (wishlist.length === 0) {
     return (
       <div className="w-full min-h-[50vh] flex flex-col items-center justify-center text-center p-8">
         <h2 className="text-2xl font-semibold mb-2">Your Wishlist is Empty</h2>
-        <p className="text-muted-foreground mb-6">Looks like you haven't added anything to your wishlist yet.</p>
+        <p className="text-muted-foreground mb-6">Looks like you haven&apos;t added anything to your wishlist yet.</p>
         <Link href="/" className="px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
           Continue Shopping
         </Link>

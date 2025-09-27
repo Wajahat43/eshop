@@ -3,12 +3,28 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import axiosInstance from '../utils/axiosInstance';
 
+interface SessionCouponSummary {
+  totalDiscount: number;
+  coupons: Array<{
+    code: string;
+    discountAmount: number;
+    appliedProductIds: string[];
+    discountType: 'PERCENT' | 'FLAT';
+    discountValue: number;
+  }>;
+}
+
 interface SessionData {
   sessionId: string;
   cart: any[];
   totalAmount: number;
+  discountedTotal: number;
   shippingAddressId?: string;
-  coupon?: any;
+  couponCodes?: string[];
+  appliedCoupons?: SessionCouponSummary;
+  perItemCoupons?: Record<string, any>;
+  invalidCouponCodes?: string[];
+  unappliedCouponCodes?: string[];
   sellers: any[];
 }
 
@@ -104,7 +120,8 @@ const useCheckout = () => {
     cartItems: sessionData?.cart || [],
 
     // Coupon
-    coupon: sessionData?.coupon,
+    coupons: sessionData?.appliedCoupons,
+    perItemCoupons: sessionData?.perItemCoupons,
 
     // Loading states
     loading: isSessionLoading || createPaymentIntentMutation.isPending,

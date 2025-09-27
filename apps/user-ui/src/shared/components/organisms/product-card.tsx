@@ -78,7 +78,7 @@ const ProductCard = ({ product, isEvent = false }: ProductCardProps) => {
         <div className="relative overflow-hidden">
           <Link href={`/product/${product?.slug}`}>
             <Image
-              src={product?.images[0]?.url || '/images/placeholder.png'}
+              src={product?.images?.[0]?.url || '/placeholder-image.jpg'}
               alt={product?.title}
               className="w-full object-cover h-[220px] mx-auto transition-transform duration-300 group-hover:scale-105"
               width={300}

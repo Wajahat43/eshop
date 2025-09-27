@@ -1,12 +1,12 @@
 import Stripe from 'stripe';
 import redis from '@packages/libs/redis';
-
 import prisma from '@packages/libs/prisma';
 import crypto from 'crypto';
-import { processOrdersForAllShops } from '../utils/order.utils';
-import { generateCartHash, normalizeCart } from '../utils/cart.utils';
-import { CartItem, SellerData, PaymentSession, Coupon } from '../types';
 import { Request, Response, NextFunction } from 'express';
+
+import { generateCartHash, normalizeCart } from '../utils/cart.utils';
+import { CartItem, SellerData, PaymentSession } from '../types';
+import { processOrdersForAllShops, resolveCouponsForCart } from '../utils/order.utils';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
@@ -16,7 +16,7 @@ interface CreatePaymentSessionRequest extends Request {
     cart: CartItem[];
     userId: string;
     selectedAddressId?: string;
-    coupon?: Coupon;
+    couponCodes?: string[];
   };
 }
 
@@ -142,14 +142,25 @@ export const verifyPaymentSession = async (req: VerifySessionRequest, res: Respo
       });
     }
 
+    const { allocation } = await resolveCouponsForCart(sessionData.cart, sessionData.couponCodes || []);
+
+    // Calculate discounted total
+    const totalDiscount = allocation.summary.totalDiscount || 0;
+    const discountedTotal = sessionData.totalAmount - totalDiscount;
+
     return res.status(200).json({
       success: true,
       session: {
         sessionId: sessionData.sessionId,
         cart: sessionData.cart,
         totalAmount: sessionData.totalAmount,
+        discountedTotal: discountedTotal,
         shippingAddressId: sessionData.shippingAddressId,
-        coupon: sessionData.coupon,
+        couponCodes: sessionData.couponCodes || [],
+        appliedCoupons: allocation.summary,
+        perItemCoupons: allocation.perItemCoupons,
+        invalidCouponCodes: allocation.invalidCouponCodes,
+        unappliedCouponCodes: allocation.unappliedCouponCodes,
         sellers: sessionData.sellers,
       },
     });
@@ -158,6 +169,36 @@ export const verifyPaymentSession = async (req: VerifySessionRequest, res: Respo
     return res.status(500).json({
       success: false,
       message: 'Failed to verify payment session',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
+export const previewCartCoupons = async (req: Request, res: Response) => {
+  try {
+    const { cart, couponCodes = [] } = req.body as { cart: CartItem[]; couponCodes?: string[] };
+
+    if (!Array.isArray(cart) || cart.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cart must be a non-empty array',
+      });
+    }
+
+    const { allocation, missingCouponCodes } = await resolveCouponsForCart(cart, couponCodes || []);
+
+    return res.status(200).json({
+      success: true,
+      appliedCoupons: allocation.summary,
+      perItemCoupons: allocation.perItemCoupons,
+      invalidCouponCodes: allocation.invalidCouponCodes.concat(missingCouponCodes),
+      unappliedCouponCodes: allocation.unappliedCouponCodes,
+    });
+  } catch (error) {
+    console.error('Error previewing coupons:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to preview coupons',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
@@ -234,7 +275,7 @@ export const createPaymentIntent = async (req: CreatePaymentIntentRequest, res: 
  */
 export const createPaymentSession = async (req: CreatePaymentSessionRequest, res: Response) => {
   try {
-    const { cart, userId, selectedAddressId, coupon } = req.body;
+    const { cart, userId, selectedAddressId, couponCodes = [] } = req.body;
 
     // Validate required fields
     if (!cart || !userId) {
@@ -320,14 +361,20 @@ export const createPaymentSession = async (req: CreatePaymentSessionRequest, res
 
     // Create session payload using normalized cart\
     //TODO: should we use car
+    const { allocation, sanitizedCouponCodes, missingCouponCodes } = await resolveCouponsForCart(cart, couponCodes);
+
     const sessionData: PaymentSession = {
       userId,
       sessionId,
-      cart: cart,
+      cart,
       sellers: sellerData,
       totalAmount: cartTotal,
       shippingAddressId: selectedAddressId || undefined,
-      coupon: coupon || undefined,
+      couponCodes: sanitizedCouponCodes,
+      appliedCoupons: allocation.summary,
+      perItemCoupons: allocation.perItemCoupons,
+      invalidCouponCodes: allocation.invalidCouponCodes.concat(missingCouponCodes),
+      unappliedCouponCodes: allocation.unappliedCouponCodes,
     };
 
     // Store session with simple key structure and 10-minute expiration
@@ -341,6 +388,10 @@ export const createPaymentSession = async (req: CreatePaymentSessionRequest, res
       success: true,
       sessionId,
       isExisting: false,
+      appliedCoupons: allocation.summary,
+      perItemCoupons: allocation.perItemCoupons,
+      invalidCouponCodes: allocation.invalidCouponCodes.concat(missingCouponCodes),
+      unappliedCouponCodes: allocation.unappliedCouponCodes,
     });
   } catch (error) {
     console.error('Error creating payment session:', error);

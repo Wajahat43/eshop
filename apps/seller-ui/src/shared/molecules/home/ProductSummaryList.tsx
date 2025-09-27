@@ -33,7 +33,8 @@ const ProductSummaryList: React.FC<ProductSummaryListProps> = ({ products, empty
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image} alt={p.title} className="h-full w-full object-cover" />
               ) : (
-                <span>IMG</span>
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src="/placeholder-image.jpg" alt={p.title} className="h-full w-full object-cover" />
               )}
             </div>
             <div className="flex-1 min-w-0">

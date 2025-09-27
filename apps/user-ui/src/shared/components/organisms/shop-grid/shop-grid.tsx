@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
+import { PageLoader } from '../../molecules';
 import ShopCard from '../shop-card';
-import { Spinner } from '../../spinner';
 
 interface ShopGridProps {
   shops: any[];
@@ -11,11 +11,7 @@ interface ShopGridProps {
 
 const ShopGrid = ({ shops, loading, error }: ShopGridProps) => {
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <Spinner />
-      </div>
-    );
+    return <PageLoader message="Loading shops…" />;
   }
 
   if (error) {

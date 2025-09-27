@@ -8,6 +8,13 @@ export interface OrderItem {
   productId: string;
   quantity: number;
   price: number;
+  discountAmount?: number;
+  coupon?: {
+    code: string;
+    discountAmount: number;
+    discountType?: 'PERCENT' | 'FLAT' | string;
+    discountValue?: number;
+  } | null;
   selectedOptions?: Record<string, any> | null;
   createdAt: string;
   updatedAt: string;
@@ -28,8 +35,21 @@ export interface Order {
   total: number;
   status: 'PENDING' | 'PAID' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
   shippingAddressId?: string;
+  // Legacy single-coupon fields may exist on old data
   couponCode?: string;
-  discountAmount: number;
+  discountAmount?: number;
+  // New multi-coupon summary
+  totalDiscount?: number;
+  appliedCoupons?: {
+    totalDiscount: number;
+    coupons: Array<{
+      code: string;
+      discountAmount: number;
+      appliedProductIds: string[];
+      discountType?: 'PERCENT' | 'FLAT' | string;
+      discountValue?: number;
+    }>;
+  } | null;
   trackingNumber?: string;
   estimatedDelivery?: string;
   createdAt: string;
