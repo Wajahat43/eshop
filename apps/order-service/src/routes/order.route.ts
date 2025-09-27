@@ -3,6 +3,7 @@ import {
   createPaymentIntent,
   createPaymentSession,
   verifyPaymentSession,
+  previewCartCoupons,
   getSellerOrders,
   getOrderDetails,
   updateOrderStatus,
@@ -26,6 +27,7 @@ router.get('/health', (req, res) => {
 // Payment routes with validation
 router.post('/create-payment-intent', validateCreatePaymentIntent, isAuthenticated, createPaymentIntent);
 router.post('/create-payment-session', validateCreatePaymentSession, createPaymentSession);
+router.post('/preview-coupons', previewCartCoupons);
 
 // Session verification route
 router.get('/verify-session/:sessionId', verifyPaymentSession);

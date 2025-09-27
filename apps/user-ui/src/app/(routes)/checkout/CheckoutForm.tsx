@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { Loader2 } from 'lucide-react';
+import { CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Loader2, CreditCard, Calendar, Lock, TestTube } from 'lucide-react';
 
 interface CheckoutFormProps {
   sessionData: any;
@@ -24,12 +24,22 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isTestMode, setIsTestMode] = useState(false);
   const externalErrorMessage =
     paymentIntentError instanceof Error
       ? paymentIntentError.message
       : typeof paymentIntentError === 'string'
       ? paymentIntentError
       : null;
+
+  const handleTestPayment = () => {
+    setIsTestMode(true);
+    setError(null);
+
+    // Note: Stripe Elements don't support programmatic value setting for security reasons
+    // This is a visual indicator that test mode is active
+    // Users will need to manually enter test card details
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -73,18 +83,20 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
         throw new Error('Failed to create payment intents');
       }
 
-      // Get the card element
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('Card element not found');
+      // Get the card elements
+      const cardNumberElement = elements.getElement(CardNumberElement);
+      const cardExpiryElement = elements.getElement(CardExpiryElement);
+      const cardCvcElement = elements.getElement(CardCvcElement);
+
+      if (!cardNumberElement || !cardExpiryElement || !cardCvcElement) {
+        throw new Error('Card elements not found');
       }
 
       // Process each payment intent
-
       for (const paymentIntent of createdPaymentIntents) {
         const { error: confirmError } = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
           payment_method: {
-            card: cardElement,
+            card: cardNumberElement,
             billing_details: {
               name: 'Customer Name', // You can get this from user data
               email: 'customer@example.com', // You can get this from user data
@@ -111,6 +123,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       base: {
         fontSize: '16px',
         color: '#424770',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
         '::placeholder': {
           color: '#aab7c4',
         },
@@ -123,11 +136,57 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Card Element */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Card Details</label>
-        <div className="border rounded-md p-3 bg-background">
-          <CardElement options={cardElementOptions} />
+      {/* Card Details */}
+      <div className="space-y-4">
+        <label className="text-sm font-medium text-foreground">Card Details</label>
+
+        {/* Card Number */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+            <CreditCard className="h-3 w-3" />
+            Card Number
+          </label>
+          <div className="border border-border/60 rounded-lg p-3 bg-background focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+            <CardNumberElement
+              options={{
+                ...cardElementOptions,
+                placeholder: '1234 5678 9012 3456',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Expiry and CVC */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+              <Calendar className="h-3 w-3" />
+              Expiry Date
+            </label>
+            <div className="border border-border/60 rounded-lg p-3 bg-background focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+              <CardExpiryElement
+                options={{
+                  ...cardElementOptions,
+                  placeholder: 'MM/YY',
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+              <Lock className="h-3 w-3" />
+              CVC
+            </label>
+            <div className="border border-border/60 rounded-lg p-3 bg-background focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+              <CardCvcElement
+                options={{
+                  ...cardElementOptions,
+                  placeholder: '123',
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -135,6 +194,42 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       {(error || externalErrorMessage) && (
         <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
           <p className="text-sm text-destructive">{error || externalErrorMessage || 'An error occurred'}</p>
+        </div>
+      )}
+
+      {/* Test Payment Button */}
+      {!isTestMode && (
+        <button
+          type="button"
+          onClick={handleTestPayment}
+          className="w-full py-2 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border/60"
+        >
+          <TestTube className="h-4 w-4" />
+          Use Test Payment
+        </button>
+      )}
+
+      {/* Test Mode Instructions */}
+      {isTestMode && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <TestTube className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-blue-900">Test Mode Active</h4>
+              <p className="text-xs text-blue-700">Use these test card details:</p>
+              <div className="text-xs text-blue-600 space-y-1">
+                <div>
+                  <strong>Card Number:</strong> 4242 4242 4242 4242
+                </div>
+                <div>
+                  <strong>Expiry:</strong> Any future date (e.g., 12/34)
+                </div>
+                <div>
+                  <strong>CVC:</strong> Any 3 digits (e.g., 123)
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -151,7 +246,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
         {(isProcessing || isCreatingPaymentIntent) && <Loader2 className="h-4 w-4 animate-spin" />}
         {isProcessing || isCreatingPaymentIntent
           ? 'Processing payment...'
-          : `Pay $${sessionData.totalAmount.toFixed(2)}`}
+          : `Pay $${sessionData.discountedTotal?.toFixed(2) || sessionData.totalAmount?.toFixed(2) || '0.00'}`}
       </button>
 
       {/* Security Notice */}

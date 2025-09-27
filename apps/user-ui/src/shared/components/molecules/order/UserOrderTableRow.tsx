@@ -3,12 +3,14 @@ import Image from 'next/image';
 import { UserOrder } from '../../../../hooks/useUserOrders';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { Eye } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface UserOrderTableRowProps {
   order: UserOrder;
 }
 
 export const UserOrderTableRow: React.FC<UserOrderTableRowProps> = ({ order }) => {
+  const router = useRouter();
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -25,8 +27,7 @@ export const UserOrderTableRow: React.FC<UserOrderTableRowProps> = ({ order }) =
   };
 
   const handleViewDetails = () => {
-    // TODO: Implement order details view
-    console.log('View order details:', order.id);
+    router.push(`/orders/${order.id}`);
   };
 
   return (

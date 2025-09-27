@@ -134,6 +134,8 @@ const CheckoutContent = () => {
   }
 
   const items = sessionData.cart || [];
+  const perItemCoupons: Record<string, any> = sessionData.perItemCoupons || {};
+  const totalDiscount = sessionData.appliedCoupons?.totalDiscount || 0;
   const sellerLookup = new Map<string, any>();
   (sessionData.sellers || []).forEach((seller: any) => {
     sellerLookup.set(String(seller.shopId), seller);
@@ -141,7 +143,7 @@ const CheckoutContent = () => {
 
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.sale_price || 0) * (item.quantity || 0), 0);
   const totalItems = items.reduce((count: number, item: any) => count + (item.quantity || 0), 0);
-  const totalAmount = sessionData.totalAmount || subtotal;
+  const totalAmount = sessionData.discountedTotal || (sessionData.totalAmount || subtotal) - totalDiscount;
 
   const nextSteps = [
     'You will receive order confirmation emails from each seller in your cart.',
@@ -267,6 +269,9 @@ const CheckoutContent = () => {
 
               <div className="mt-4 space-y-4">
                 {items.map((item: any, index: number) => {
+                  const original = (item.sale_price || 0) * (item.quantity || 0);
+                  const itemDiscount = perItemCoupons[item.id]?.discountAmount || 0;
+                  const final = Math.max(original - itemDiscount, 0);
                   const seller = sellerLookup.get(String(item.shopId));
                   const sellerName = seller?.shopName || seller?.name || seller?.shop?.name;
                   const imageSrc = item?.images?.[0]?.url || '/placeholder-image.jpg';
@@ -289,9 +294,15 @@ const CheckoutContent = () => {
                         {sellerName && <p className="text-xs text-muted-foreground">Sold by {sellerName}</p>}
                         <p className="text-xs text-muted-foreground">Qty {item.quantity}</p>
                       </div>
-                      <span className="text-sm font-semibold text-foreground">
-                        ${((item.sale_price || 0) * (item.quantity || 0)).toFixed(2)}
-                      </span>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground line-through">
+                          {itemDiscount ? `$${original.toFixed(2)}` : ''}
+                        </p>
+                        <span className="text-sm font-semibold text-foreground">${final.toFixed(2)}</span>
+                        {perItemCoupons[item.id]?.code ? (
+                          <p className="text-[11px] text-emerald-600">Coupon {perItemCoupons[item.id].code}</p>
+                        ) : null}
+                      </div>
                     </div>
                   );
                 })}
@@ -302,10 +313,10 @@ const CheckoutContent = () => {
                   <span>Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
-                {sessionData.coupon && (
-                  <div className="flex items-center justify-between text-primary">
-                    <span>Coupon applied</span>
-                    <span>{sessionData.coupon.code || sessionData.coupon.id || 'Saved'}</span>
+                {totalDiscount > 0 && (
+                  <div className="flex items-center justify-between text-emerald-600">
+                    <span>Discounts</span>
+                    <span>- ${totalDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between text-lg font-semibold text-foreground">

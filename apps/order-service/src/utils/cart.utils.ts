@@ -4,10 +4,17 @@ export const normalizeCart = (cart: any[]) => {
   const uniqueItems = new Map();
 
   cart.forEach((item) => {
-    const key = `${item.productId}_${item.variantId || 'default'}`;
+    if (!item || !item.id) {
+      return;
+    }
+
+    const key = `${item.id}_${item.variantId || 'default'}`;
     if (uniqueItems.has(key)) {
-      // If duplicate found, sum the quantities
-      uniqueItems.get(key).quantity += item.quantity;
+      const existing = uniqueItems.get(key);
+      existing.quantity += item.quantity;
+      existing.sale_price = item.sale_price;
+      existing.shopId = item.shopId;
+      existing.selectedOptions = item.selectedOptions;
     } else {
       uniqueItems.set(key, { ...item });
     }
@@ -15,7 +22,7 @@ export const normalizeCart = (cart: any[]) => {
 
   // Convert back to array and sort by product ID
   // The JSON.stringify in generateCartHash will handle the normalization
-  return Array.from(uniqueItems.values()).sort((a, b) => a.productId.localeCompare(b.productId));
+  return Array.from(uniqueItems.values()).sort((a, b) => a.id.localeCompare(b.id));
 };
 
 import crypto from 'crypto';

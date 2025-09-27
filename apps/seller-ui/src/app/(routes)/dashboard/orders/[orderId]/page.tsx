@@ -160,7 +160,7 @@ export default function OrderDetailsPage() {
             </div>
           </div>
 
-          {order.discountAmount > 0 && (
+          {order.totalDiscount || order.discountAmount ? (
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -169,12 +169,12 @@ export default function OrderDetailsPage() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Discount</p>
                   <p className="text-lg font-bold text-foreground text-green-600">
-                    -{formatPrice(order.discountAmount)}
+                    -{formatPrice(order.totalDiscount || order.discountAmount || 0)}
                   </p>
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Order Status Update */}
@@ -247,7 +247,18 @@ export default function OrderDetailsPage() {
 
         {/* Order Items */}
         <div className="bg-card border border-border rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Order Items</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Order Items</h3>
+          {order?.appliedCoupons?.coupons?.length ? (
+            <div className="mb-4 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Coupons:</span>{' '}
+              {order.appliedCoupons.coupons.map((c, idx) => (
+                <span key={c.code} className="mr-3">
+                  <span className="text-foreground">{c.code}</span> (-{formatPrice(c.discountAmount)})
+                  {idx < order.appliedCoupons!.coupons.length - 1 ? ',' : ''}
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div className="space-y-4">
             {items?.map((item) => (
               <div key={item.id} className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
@@ -271,6 +282,15 @@ export default function OrderDetailsPage() {
                   <p className="text-muted-foreground">
                     Quantity: {item.quantity} × {formatPrice(item.price)}
                   </p>
+                  {item.coupon?.code ? (
+                    <p className="text-xs text-emerald-600 mt-1">
+                      Coupon {item.coupon.code} applied (-
+                      {item.coupon.discountType === 'PERCENT'
+                        ? `${item.coupon.discountValue}%`
+                        : `${formatPrice(item.coupon.discountAmount)}`}
+                      )
+                    </p>
+                  ) : null}
                   {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
                     <div className="text-sm text-muted-foreground mt-1">
                       Options:{' '}
@@ -281,7 +301,12 @@ export default function OrderDetailsPage() {
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-bold text-foreground">{formatPrice(item.price * item.quantity)}</p>
+                  <p className="text-sm text-muted-foreground line-through">
+                    {item.discountAmount ? formatPrice(item.price * item.quantity) : ''}
+                  </p>
+                  <p className="text-xl font-bold text-foreground">
+                    {formatPrice(item.price * item.quantity - (item.discountAmount || 0))}
+                  </p>
                 </div>
               </div>
             )) || (

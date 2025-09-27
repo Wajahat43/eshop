@@ -132,6 +132,7 @@ app.post('/order/api/create-order', express.raw({ type: 'application/json' }), (
       'upgrade',
     ];
 
+    // Set all headers BEFORE piping the response
     Object.keys(proxyRes.headers).forEach((key) => {
       if (!hopByHopHeaders.includes(key.toLowerCase())) {
         const value = proxyRes.headers[key];
@@ -141,7 +142,13 @@ app.post('/order/api/create-order', express.raw({ type: 'application/json' }), (
       }
     });
 
-    // Forward response body
+    // Check if headers have already been sent before piping
+    if (res.headersSent) {
+      console.error('Headers already sent, cannot pipe response');
+      return;
+    }
+
+    // Forward response body AFTER all headers are set
     proxyRes.pipe(res);
   });
 

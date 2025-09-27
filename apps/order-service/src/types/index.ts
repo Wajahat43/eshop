@@ -7,11 +7,39 @@ export interface CartItem {
   selectedOptions?: Record<string, any>;
 }
 
+export type CouponDiscountType = 'PERCENT' | 'FLAT';
+
 export interface Coupon {
   code: string;
-  discountPercent?: number;
-  discountAmount?: number;
-  discountedProductId?: string;
+  discountType: CouponDiscountType;
+  discountValue: number;
+}
+
+export interface AppliedCoupon {
+  code: string;
+  discountAmount: number;
+  appliedProductIds: string[];
+  discountType: CouponDiscountType;
+  discountValue: number;
+}
+
+export interface AppliedCouponSummary {
+  totalDiscount: number;
+  coupons: AppliedCoupon[];
+}
+
+export interface OrderItemCoupon {
+  code: string;
+  discountAmount: number;
+  discountType: CouponDiscountType;
+  discountValue: number;
+}
+
+export interface CouponAllocationResult {
+  perItemCoupons: Record<string, OrderItemCoupon | undefined>;
+  summary: AppliedCouponSummary;
+  invalidCouponCodes: string[];
+  unappliedCouponCodes: string[];
 }
 
 export interface SellerData {
@@ -27,7 +55,12 @@ export interface PaymentSession {
   sellers: SellerData[];
   totalAmount: number;
   shippingAddressId?: string;
-  coupon?: Coupon;
+  couponCodes?: string[];
+  perItemCoupons?: Record<string, OrderItemCoupon | undefined>;
+  appliedCoupons?: AppliedCouponSummary;
+  invalidCouponCodes?: string[];
+  unappliedCouponCodes?: string[];
+  subtotal?: number;
 }
 
 export interface OrderItemData {
@@ -35,6 +68,8 @@ export interface OrderItemData {
   quantity: number;
   price: number;
   selectedOptions?: Record<string, any>;
+  discountAmount?: number;
+  coupon?: OrderItemCoupon | null;
 }
 
 export interface OrderData {
@@ -43,8 +78,8 @@ export interface OrderData {
   total: number;
   status: 'PENDING' | 'PAID' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
   shippingAddressId?: string;
-  couponCode?: string;
-  discountAmount: number;
+  totalDiscount: number;
+  appliedCoupons?: AppliedCouponSummary;
   items: OrderItemData[];
 }
 
