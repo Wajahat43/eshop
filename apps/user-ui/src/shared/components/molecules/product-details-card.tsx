@@ -51,7 +51,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
           <div className="relative group">
             <div className="aspect-square bg-muted rounded-xl overflow-hidden shadow-lg">
               <Image
-                src={product?.images[activeImage || 0]?.url}
+                src={product?.images?.[activeImage || 0]?.url || '/placeholder-image.jpg'}
                 alt={product?.title}
                 width={500}
                 height={500}
@@ -85,7 +85,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                   onClick={() => setActiveImage(index)}
                 >
                   <Image
-                    src={image?.url}
+                    src={image?.url || '/placeholder-image.jpg'}
                     alt={`${product?.title} - ${index + 1} thumbnail image`}
                     width={80}
                     height={80}

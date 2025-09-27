@@ -8,9 +8,11 @@ export function DarkModeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-lg z-50"
+      className="flex items-center gap-2 px-3 py-2 rounded-md bg-card hover:bg-accent transition-colors text-sm font-medium"
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}
+      {isDark ? '☀️' : '🌙'}
+      <span className="hidden sm:inline">{isDark ? 'Light' : 'Dark'}</span>
     </button>
   );
 }

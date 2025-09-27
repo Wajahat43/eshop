@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Loader2, MessageCircle } from 'lucide-react';
 import useUser from 'apps/user-ui/src/hooks/userUser';
 import { useWebSocket } from 'apps/user-ui/src/context/websocket-context';
-import { useMarkAsSeen, useMessages } from 'apps/user-ui/src/hooks/chat';
+import { useMarkAsSeen } from 'apps/user-ui/src/hooks/chat';
+import { useInfiniteMessages } from 'apps/user-ui/src/hooks/chat/useMessages';
 import { ChatInput, ChatMessage } from '../../molecules';
 import useSendMessage from 'apps/user-ui/src/hooks/chat/useSendMessage';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,33 +29,71 @@ interface ChatWindowProps {
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, seller }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
   const { isConnected, isConnecting, error: wsError, setMessageHandler } = useWebSocket();
   const [messages, setMessages] = useState<Message[]>([]);
   const queryClient = useQueryClient();
 
-  const messagesQuery = useMessages({
+  const messagesQuery = useInfiniteMessages({
     conversationId: conversationId || '',
-    page: 1,
-    limit: 50,
+    limit: 20,
   });
 
   const { mutate: sendMessage, isPending: isSending } = useSendMessage();
   const { mutate: markAsSeen, isPending: isMarking } = useMarkAsSeen();
 
-  const { data, isLoading, isError, error } = messagesQuery;
-  const sellerInfo = data?.seller || seller;
+  const { data, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = messagesQuery;
+
+  // Flatten all messages from all pages and sort by creation date
+  const allMessages = useMemo(() => {
+    if (!data?.pages) return [];
+
+    const messages = data.pages.flatMap((page: any) => page.messages);
+    // Sort by createdAt to ensure proper chronological order
+    return messages.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [data?.pages]);
+  const sellerInfo = data?.pages[0]?.seller || seller;
 
   useEffect(() => {
-    if (data) {
-      setMessages(data.messages);
+    if (allMessages.length > 0) {
+      setMessages(allMessages);
     }
-  }, [data]);
+  }, [allMessages]);
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom when new messages arrive (only for new messages, not when loading more)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // Only auto-scroll if we're not currently loading more messages
+    // and if the user is near the bottom of the chat
+    if (!isFetchingNextPage && messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100; // 100px threshold
+
+      if (isNearBottom) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [messages, isFetchingNextPage]);
+
+  // Handle scroll to load more messages
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight } = e.currentTarget;
+
+    // Load more messages when scrolled to top
+    if (scrollTop === 0 && hasNextPage && !isFetchingNextPage) {
+      // Store current scroll height to maintain position after loading
+      const currentScrollHeight = scrollHeight;
+
+      fetchNextPage().then(() => {
+        // After loading, adjust scroll to maintain position
+        if (messagesContainerRef.current) {
+          const newScrollHeight = messagesContainerRef.current.scrollHeight;
+          const heightDifference = newScrollHeight - currentScrollHeight;
+          messagesContainerRef.current.scrollTop = heightDifference;
+        }
+      });
+    }
+  };
 
   // Mark messages as seen when conversation is selected
   useEffect(() => {
@@ -108,15 +147,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, seller }) => {
         return;
       }
 
-      queryClient.setQueryData(['messages', conversationId, 1, 50], (oldData: any) => {
+      // Update infinite query data - add new message to the last page (most recent)
+      queryClient.setQueryData(['messages', 'infinite', conversationId, 20], (oldData: any) => {
         if (!oldData) return oldData;
+
+        const newPages = [...oldData.pages];
+        if (newPages.length > 0) {
+          const lastPageIndex = newPages.length - 1;
+          newPages[lastPageIndex] = {
+            ...newPages[lastPageIndex],
+            messages: [...newPages[lastPageIndex].messages, data],
+          };
+        }
+
         return {
           ...oldData,
-          messages: [...oldData.messages, data],
+          pages: newPages,
         };
       });
 
-      if (data.senderId !== user?.id && !isMarking) {
+      if (data.senderId !== user?.id && !isMarking && conversationId) {
         markAsSeen({ conversationId });
       }
     };
@@ -191,7 +241,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, seller }) => {
   return (
     <div className="flex flex-col h-full min-w-0 min-h-0">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 min-w-0">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 min-w-0"
+        onScroll={handleScroll}
+      >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
@@ -202,6 +256,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, seller }) => {
           </div>
         ) : (
           <>
+            {/* Load more indicator */}
+            {isFetchingNextPage && (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Loading more messages...</span>
+              </div>
+            )}
+
             {messages.map((message, index) => (
               <ChatMessage
                 key={message.id}

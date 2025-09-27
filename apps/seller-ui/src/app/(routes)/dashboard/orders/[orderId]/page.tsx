@@ -259,7 +259,11 @@ export default function OrderDetailsPage() {
                       className="w-20 h-20 rounded-lg object-cover"
                     />
                   ) : (
-                    <PackageIcon className="h-10 w-10 text-muted-foreground" />
+                    <img
+                      src="/placeholder-image.jpg"
+                      alt={item.product?.title || 'Product'}
+                      className="w-20 h-20 rounded-lg object-cover"
+                    />
                   )}
                 </div>
                 <div className="flex-1">

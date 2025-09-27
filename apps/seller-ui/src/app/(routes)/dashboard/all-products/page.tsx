@@ -24,10 +24,10 @@ const AllProducts = () => {
         accessorKey: 'image',
         header: 'Image',
         cell: ({ row }: any) => {
-          const image = row.original.images[0];
+          const image = row.original.images?.[0];
           return (
             <Image
-              src={image.url}
+              src={image?.url || '/placeholder-image.jpg'}
               alt={row.original.title}
               width={200}
               height={200}
@@ -236,7 +236,7 @@ const AllProducts = () => {
             <div className="text-sm text-muted-foreground mb-8">
               <p className="text-large font-semibold">Are you sure you want to delete this product? </p>
               <p className="text-md">
-                Product will be moved to delete state and automatically deleted after 24 hours. You can reover it, in
+                Product will be moved to delete state and automatically deleted after 24 hours. You can recover it, in
                 this time.
               </p>
             </div>

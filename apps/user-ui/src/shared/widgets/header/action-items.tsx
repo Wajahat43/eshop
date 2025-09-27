@@ -5,6 +5,7 @@ import { Heart, User, ShoppingCart } from 'lucide-react';
 import useUser from 'apps/user-ui/src/hooks/userUser';
 import { Spinner } from '../../components/spinner';
 import { useStore } from 'apps/user-ui/src/store';
+import { DarkModeToggle } from '../../../components/ui/DarkModeToggle';
 
 const ActionItems = () => {
   const { user, isLoading } = useUser();
@@ -52,6 +53,7 @@ const ActionItems = () => {
 
         {/* Action Icons */}
         <div className="flex items-center gap-5">
+          <DarkModeToggle />
           <Link href="/wishlist" className="relative">
             <Heart />
             <div className="w-6 h-6 border-2 border-white bg-red-500 rounded-full flex items-center justify-center absolute top-[-10px] right-[-10px]">

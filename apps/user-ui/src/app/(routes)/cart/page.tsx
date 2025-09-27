@@ -89,7 +89,7 @@ const CartScreen = () => {
           return (
             <div className="flex items-center gap-4">
               <Image
-                src={product.images[0]?.url || '/images/placeholder.png'}
+                src={product.images?.[0]?.url || '/placeholder-image.jpg'}
                 alt={product.title}
                 width={100}
                 height={100}
