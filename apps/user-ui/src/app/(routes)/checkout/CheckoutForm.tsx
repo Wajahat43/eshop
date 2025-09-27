@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Loader2 } from 'lucide-react';
 
 interface CheckoutFormProps {
   sessionData: any;
@@ -141,13 +142,16 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       <button
         type="submit"
         disabled={!stripe || isProcessing || isCreatingPaymentIntent}
-        className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-colors ${
+        className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
           !stripe || isProcessing || isCreatingPaymentIntent
-            ? 'bg-muted text-muted-foreground cursor-not-allowed'
-            : 'bg-primary hover:bg-primary/90'
+            ? 'bg-muted/80 text-muted-foreground cursor-not-allowed border border-border/60 shadow-sm'
+            : 'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md active:scale-[0.98]'
         }`}
       >
-        {isProcessing || isCreatingPaymentIntent ? 'Processing...' : `Pay $${sessionData.totalAmount.toFixed(2)}`}
+        {(isProcessing || isCreatingPaymentIntent) && <Loader2 className="h-4 w-4 animate-spin" />}
+        {isProcessing || isCreatingPaymentIntent
+          ? 'Processing payment...'
+          : `Pay $${sessionData.totalAmount.toFixed(2)}`}
       </button>
 
       {/* Security Notice */}

@@ -269,7 +269,7 @@ const CheckoutContent = () => {
                 {items.map((item: any, index: number) => {
                   const seller = sellerLookup.get(String(item.shopId));
                   const sellerName = seller?.shopName || seller?.name || seller?.shop?.name;
-                  const imageSrc = item?.images?.[0]?.url || '/images/placeholder.png';
+                  const imageSrc = item?.images?.[0]?.url || '/placeholder-image.jpg';
                   return (
                     <div
                       key={`${item.id || item.slug || index}-summary`}

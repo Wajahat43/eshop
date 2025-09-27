@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Trash, Plus, Minus, Loader2 } from 'lucide-react';
+import { Trash, Plus, Minus } from 'lucide-react';
 import { useStore } from 'apps/user-ui/src/store';
 import useUser from 'apps/user-ui/src/hooks/userUser';
 import useLocationTracking from 'apps/user-ui/src/hooks/useLocationTracking';
@@ -13,6 +13,7 @@ import useProducts from 'apps/user-ui/src/hooks/useProducts';
 import { useUserAddresses } from 'apps/user-ui/src/hooks/useUserAddresses';
 import usePaymentSession from 'apps/user-ui/src/hooks/usePaymentSession';
 import ProtectedRoute from '../../../shared/components/guards/protected-route';
+import { PageLoader } from '../../../shared/components/molecules';
 
 const CartPage = () => {
   return (
@@ -22,14 +23,7 @@ const CartPage = () => {
   );
 };
 
-const CartLoadingFallback = () => (
-  <div className="flex min-h-[60vh] items-center justify-center">
-    <div className="flex flex-col items-center gap-3" role="status">
-      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      <span className="text-sm font-medium text-muted-foreground">Loading your cart…</span>
-    </div>
-  </div>
-);
+const CartLoadingFallback = () => <PageLoader message="Loading your cart…" />;
 
 const CartScreen = () => {
   const { cart, removeFromCart, setCartQuantity } = useStore();
@@ -170,14 +164,7 @@ const CartScreen = () => {
   const total = subtotal; // For now, total is the same as subtotal
 
   if (getProductsQuery.isLoading) {
-    return (
-      <div className="flex min-h-[60vh] w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3" role="status">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <span className="text-sm font-medium text-muted-foreground">Loading your cart…</span>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Loading your cart…" />;
   }
 
   if (cart.length === 0) {

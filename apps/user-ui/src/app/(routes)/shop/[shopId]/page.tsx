@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const bannerImage = shop.coverBanner || '/images/shop-banner-placeholder.png';
+  const bannerImage = shop.coverBanner || '/images/shop-banner-placeholder.svg';
 
   return {
     title: `${shop.name} | Shop`,

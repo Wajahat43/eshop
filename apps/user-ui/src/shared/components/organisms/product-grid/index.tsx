@@ -1,5 +1,5 @@
 import React from 'react';
-import { Spinner } from '../../spinner';
+import { PageLoader } from '../../molecules';
 import ProductCard from '../product-card';
 
 interface Product {
@@ -19,11 +19,7 @@ interface ProductGridProps {
 
 const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, error }) => {
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner />
-      </div>
-    );
+    return <PageLoader message="Loading products…" />;
   }
 
   if (error) {
